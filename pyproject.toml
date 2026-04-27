@@ -1,0 +1,11 @@
+[project]
+name = "sales-call-debrief-agent"
+version = "0.1.0"
+description = "LLM-powered pipeline for analyzing sales call transcripts and producing structured insights and CRM-ready outputs."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.136.1",
+    "requests>=2.33.1",
+    "streamlit>=1.56.0",
+]

@@ -1,0 +1,17 @@
+Rep (Sophia): It sounds like improving call insights is important for your team.
+
+Customer (Mark, Sales Manager): It is, but timing is difficult right now.
+
+Rep: Can you explain?
+
+Customer: We’re in the middle of a CRM migration.
+
+Rep: That makes sense. Many teams start with a small pilot.
+
+Customer: Maybe, but not this quarter.
+
+Rep: Would next quarter work?
+
+Customer: Yes, that’s better.
+
+Rep: Great, I’ll follow up then.
