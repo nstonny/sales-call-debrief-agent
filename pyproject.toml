@@ -13,3 +13,11 @@ dependencies = [
     "alembic>=1.16.0",
     "python-dotenv>=1.1.0",
 ]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[build-system]
+requires = ["setuptools>=70"]
+build-backend = "setuptools.build_meta"
+
