@@ -12,6 +12,8 @@ dependencies = [
     "asyncpg>=0.30.0",
     "alembic>=1.16.0",
     "python-dotenv>=1.1.0",
+    "python-multipart>=0.0.20",
+    "uvicorn>=0.34.0",
 ]
 
 [tool.setuptools.packages.find]
