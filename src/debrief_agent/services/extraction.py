@@ -5,33 +5,32 @@ Runs the LLM metadata extraction pass on a raw transcript.
 Extracts: rep_name, contact_name, contact_title, deal_stage.
 
 Uses the OpenAI Responses API (client.responses.create).
+Uses Pydantic (CallMetadataExtraction) for JSON parsing, validation, and normalisation.
 
 Behaviour on failure:
   - If the OpenAI call fails (network error, API error, rate limit) → raises HTTPException 502.
-  - If the response cannot be parsed as valid JSON → raises HTTPException 502.
-  - If required keys are missing from the JSON → raises HTTPException 502.
+  - If the LLM returns a refusal → raises HTTPException 502.
+  - If the response cannot be parsed / validated by Pydantic → raises HTTPException 502.
   In all failure cases the caller (upload route) will roll back the transaction.
 """
 
-import json
 import logging
 
 from fastapi import HTTPException
 from openai import AsyncOpenAI, OpenAIError
+from pydantic import ValidationError
 
 from debrief_agent.core.config import OPENAI_API_KEY
 from debrief_agent.prompts.extraction import (
     EXTRACTION_SYSTEM_PROMPT,
     build_extraction_user_message,
 )
+from debrief_agent.schemas.extraction import CallMetadataExtraction
 
 logger = logging.getLogger(__name__)
 
 # Reusable async client — one instance for the lifetime of the process
 _client = AsyncOpenAI(api_key=OPENAI_API_KEY)
-
-# Keys we expect the LLM to return
-_EXPECTED_KEYS = {"rep_name", "contact_name", "contact_title", "deal_stage"}
 
 
 async def extract_call_metadata(transcript: str) -> dict:
@@ -60,37 +59,44 @@ async def extract_call_metadata(transcript: str) -> dict:
             detail=f"LLM extraction failed — OpenAI API error: {exc}",
         )
 
-    # --- Parse the response ---
+    # --- Check for LLM refusal before parsing ---
+    # next() scans all output items and their content parts, returning the first
+    # refusal it finds, or None if there is no refusal in the response.
+    refusal_part = next(
+        (
+            content_part
+            for item in response.output
+            if hasattr(item, "content")
+            for content_part in item.content
+            if getattr(content_part, "type", None) == "refusal"
+        ),
+        None,  # default: no refusal found
+    )
+
+    if refusal_part:
+        refusal_text = getattr(refusal_part, "refusal", "No reason given.")
+        logger.warning("LLM refused metadata extraction request. Reason: %s", refusal_text)
+        raise HTTPException(
+            status_code=502,
+            detail=f"LLM refused to process the transcript: {refusal_text}",
+        )
+
+    # --- Parse + validate + normalise via Pydantic ---
+    # model_validate_json handles JSON parsing, key validation, and empty-string → None
+    # normalisation in one step via CallMetadataExtraction.
     raw_content = response.output_text or ""
 
     try:
-        extracted: dict = json.loads(raw_content)
-    except json.JSONDecodeError as exc:
+        metadata = CallMetadataExtraction.model_validate_json(raw_content)
+    except ValidationError as exc:
         logger.error(
-            "LLM returned non-JSON content during extraction: %r — %s",
+            "LLM response failed Pydantic validation. Raw content: %r — Errors: %s",
             raw_content,
             exc,
         )
         raise HTTPException(
             status_code=502,
-            detail="LLM extraction failed — response was not valid JSON.",
+            detail="LLM extraction failed — response did not match expected schema.",
         )
 
-    # --- Validate expected keys are present ---
-    missing = _EXPECTED_KEYS - extracted.keys()
-    if missing:
-        logger.error(
-            "LLM extraction response missing keys %s. Full response: %r",
-            missing,
-            extracted,
-        )
-        raise HTTPException(
-            status_code=502,
-            detail=f"LLM extraction failed — missing keys in response: {missing}",
-        )
-
-    # --- Normalise: ensure values are str or None (no empty strings) ---
-    return {
-        key: (extracted[key].strip() if isinstance(extracted[key], str) and extracted[key].strip() else None)
-        for key in _EXPECTED_KEYS
-    }
+    return metadata.model_dump()
