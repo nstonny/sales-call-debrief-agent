@@ -35,5 +35,4 @@ Rules:
 
 def build_extraction_user_message(transcript: str) -> str:
     """Wraps the raw transcript in a user-turn message for the extraction prompt."""
-    return f"Extract metadata from the following sales call transcript:\n\n{transcript}"
-
+    return f"Extract metadata from the following sales call transcript and return it as JSON:\n\n{transcript}"
