@@ -86,57 +86,74 @@ def render_dashboard(result: dict) -> None:
         st.json(result)
 
 
+# --- Sidebar: upload form ---
+with st.sidebar:
+    st.header("📂 Upload Transcript")
+
+    uploaded_file = st.file_uploader(
+        "Select a sales call transcript (.txt)",
+        type=["txt"],
+        accept_multiple_files=False,
+    )
+
+    # Clear input fields when a new file is uploaded
+    if "last_filename" not in st.session_state:
+        st.session_state.last_filename = None
+
+    if uploaded_file and uploaded_file.name != st.session_state.last_filename:
+        st.session_state.last_filename = uploaded_file.name
+        st.session_state.company = ""
+        st.session_state.deal_value = None
+
+    if not uploaded_file:
+        st.info("Waiting for file upload...")
+
+    company = st.text_input("Company name (optional)", key="company")
+    deal_value = st.number_input(
+        "Deal value in € (optional)",
+        min_value=0.0,
+        value=st.session_state.get("deal_value", None),
+        placeholder="e.g. 25000",
+        format="%.2f",
+        key="deal_value",
+    )
+
+    analyse_clicked = st.button("Analyze Call", disabled=not uploaded_file)
+
+
+# --- Main area: title + results ---
 st.title("📞 Sales Call Debrief Agent")
 
-uploaded_file = st.file_uploader(
-    "Upload a sales call transcript (.txt)",
-    type=["txt"],
-    accept_multiple_files=False,
-)
+if analyse_clicked and uploaded_file:
+    with st.spinner("Analysing transcript..."):
+        form_data = {}
+        if company:
+            form_data["company"] = company
+        if deal_value:
+            form_data["deal_value"] = deal_value
 
-# --- Clear input fields when a new file is uploaded ---
-# session_state persists across Streamlit reruns. We compare the current
-# filename to the last one we saw; if it changed, reset company and deal_value.
-if "last_filename" not in st.session_state:
-    st.session_state.last_filename = None
+        response = requests.post(
+            API_URL,
+            files={"file": (uploaded_file.name, uploaded_file.getvalue(), "text/plain")},
+            data=form_data,
+        )
 
-if uploaded_file and uploaded_file.name != st.session_state.last_filename:
-    st.session_state.last_filename = uploaded_file.name
-    st.session_state.company = ""
-    st.session_state.deal_value = None
+    if response.status_code == 200:
+        result = response.json()
+        st.success("✅ Transcript analysed successfully!")
+        render_dashboard(result)
+    else:
+        st.error(f"❌ Upload failed ({response.status_code}): {response.json().get('detail', 'Unknown error')}")
+elif not uploaded_file:
+    st.markdown(
+        """
+        ### Welcome 👋
+        Upload a sales call transcript using the sidebar to get started.
 
-if not uploaded_file:
-    st.info("Waiting for file upload...")
-
-# key= links each widget to session_state so the reset above takes effect
-company = st.text_input("Company name (optional)", key="company")
-deal_value = st.number_input(
-    "Deal value in € (optional)",
-    min_value=0.0,
-    value=st.session_state.get("deal_value", None),
-    placeholder="e.g. 25000",
-    format="%.2f",
-    key="deal_value",
-)
-
-if uploaded_file:
-    if st.button("Analyze Call"):
-        with st.spinner("Uploading transcript..."):
-            form_data = {}
-            if company:
-                form_data["company"] = company
-            if deal_value:
-                form_data["deal_value"] = deal_value
-
-            response = requests.post(
-                API_URL,
-                files={"file": (uploaded_file.name, uploaded_file.getvalue(), "text/plain")},
-                data=form_data,
-            )
-
-        if response.status_code == 200:
-            result = response.json()
-            st.success("✅ Transcript analysed successfully!")
-            render_dashboard(result)
-        else:
-            st.error(f"❌ Upload failed ({response.status_code}): {response.json().get('detail', 'Unknown error')}")
+        The agent will automatically:
+        - Extract call metadata (rep, contact, deal stage)
+        - Score the call and assess sentiment
+        - Identify strengths, coaching points and action items
+        - Flag objections and competitor mentions
+        """
+    )

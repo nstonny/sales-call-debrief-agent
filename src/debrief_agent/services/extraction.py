@@ -46,7 +46,7 @@ async def extract_call_metadata(transcript: str) -> dict:
     # --- Call the LLM via Responses API ---
     try:
         response = await _client.responses.create(
-            model="gpt-4o-mini",          # fast and cheap — ideal for structured extraction
+            model="gpt-4.1-mini",          # fast and cheap — ideal for structured extraction
             instructions=EXTRACTION_SYSTEM_PROMPT,
             input=build_extraction_user_message(transcript),
             temperature=0,                # deterministic — extraction should not be creative

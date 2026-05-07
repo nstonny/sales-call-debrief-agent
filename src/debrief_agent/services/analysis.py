@@ -53,7 +53,7 @@ async def generate_call_analysis(transcript: str, metadata: dict) -> dict:
     # --- Call the LLM via Responses API ---
     try:
         response = await _client.responses.create(
-            model="gpt-4o-mini",          # fast and cheap for structured generation
+            model="gpt-4.1-mini",          # fast and cheap for structured generation
             instructions=ANALYSIS_SYSTEM_PROMPT,
             input=build_analysis_user_message(transcript, metadata),
             temperature=0.3,              # slight creativity for narrative fields
