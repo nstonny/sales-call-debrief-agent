@@ -12,11 +12,22 @@ def render_dashboard(result: dict) -> None:
     st.subheader("📋 Call Summary")
 
     # --- Call metadata row ---
+    # st.metric() uses large font unsuitable for long names — use markdown labels instead
     col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Rep", result.get("rep_name") or "—")
-    col2.metric("Contact", f"{result.get('contact_name') or '—'} ({result.get('contact_title') or '—'})")
-    col3.metric("Deal Stage", (result.get("deal_stage") or "—").capitalize())
-    col4.metric("Company", result.get("company") or "—")
+    with col1:
+        st.markdown("**Rep**")
+        st.write(result.get("rep_name") or "—")
+    with col2:
+        st.markdown("**Contact**")
+        contact = result.get("contact_name") or "—"
+        title = result.get("contact_title") or ""
+        st.write(f"{contact} ({title})" if title else contact)
+    with col3:
+        st.markdown("**Deal Stage**")
+        st.write((result.get("deal_stage") or "—").capitalize())
+    with col4:
+        st.markdown("**Company**")
+        st.write(result.get("company") or "—")
 
     # --- Score + sentiment row ---
     score = analysis.get("score")
@@ -24,9 +35,15 @@ def render_dashboard(result: dict) -> None:
     deal_value = result.get("deal_value")
 
     col5, col6, col7 = st.columns(3)
-    col5.metric("🏆 Score", f"{score:.1f} / 10" if score is not None else "—")
-    col6.metric("💬 Sentiment", sentiment.capitalize() if sentiment else "—")
-    col7.metric("💶 Deal Value", f"€{deal_value:,.0f}" if deal_value else "—")
+    with col5:
+        st.markdown("**🏆 Score**")
+        st.write(f"{score:.1f} / 10" if score is not None else "—")
+    with col6:
+        st.markdown("**💬 Sentiment**")
+        st.write(sentiment.capitalize() if sentiment else "—")
+    with col7:
+        st.markdown("**💶 Deal Value**")
+        st.write(f"€{deal_value:,.0f}" if deal_value else "—")
 
     # --- Sentiment colour banner ---
     summary = analysis.get("summary")
