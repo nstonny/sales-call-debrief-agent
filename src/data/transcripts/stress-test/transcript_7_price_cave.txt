@@ -1,0 +1,48 @@
+SALES CALL TRANSCRIPT 7
+========================
+Industry: Marketing Agency / Retainer Services
+Call Type: Negotiation / Closing Call
+Rep Mistakes: Caves immediately on price, offers discount without justification, undermines own value
+Outcome: Deal closed but at severely discounted rate, margin lost
+Duration: 19 minutes
+Rep: Lauren Bates
+Prospect: Chris Anand, CMO, Redpoint Consumer Goods (mid-market)
+========================
+
+Lauren: Hi Chris, good to reconnect. So I sent over the proposal last week — have you had a chance to look at it?
+
+Chris: I have. And honestly Lauren, it's too expensive.
+
+Lauren: Oh — okay. What were you thinking?
+
+Chris: I mean we were thinking more like $6,000 a month, not $9,500.
+
+Lauren: Right, okay. I mean, I think we could probably look at something. Let me think about what we could do.
+
+Chris: Because we've got two other agencies quoting and they're both coming in under $7,000.
+
+Lauren: Yeah, I hear you. I think we could probably do $7,500. Would that work?
+
+Chris: I'd want to be at $6,500.
+
+Lauren: Hmm. I'd have to check with my director but I think we could probably get there. What would we need to take out of the scope?
+
+Chris: I don't really want to take anything out. I just think the price is too high.
+
+Lauren: Right, okay. Let me just... I think we could probably make $6,500 work actually. We really want your business, Chris, and I think we'd do great work together.
+
+Chris: Okay. And I'd want a monthly rolling contract, not a six-month commitment.
+
+Lauren: Yeah, we normally do six months but I think we could do monthly for you.
+
+Chris: And we'd want a pause clause — if we need to pause for a month we don't get charged.
+
+Lauren: Okay. Yeah I think we can do that.
+
+Chris: Alright. Send me the revised contract.
+
+Lauren: Great! Really excited to work with you Chris. I'll get that over today.
+
+Chris: Sounds good.
+
+[Follow-up note: Account flagged by finance — margin at 6,500/month monthly rolling with pause clause is below threshold. Director required Lauren to document the discount justification. No justification provided.]

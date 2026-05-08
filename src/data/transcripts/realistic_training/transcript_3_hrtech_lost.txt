@@ -1,0 +1,65 @@
+SALES CALL TRANSCRIPT 3
+========================
+Industry: HR Tech / Recruitment Software
+Call Type: Demo Call
+Outcome: Lost — went with competitor (Greenhouse)
+Duration: 41 minutes
+Rep: Priya Nair
+Prospect: Tom Gallagher, Head of Talent Acquisition, Breck Financial Services (1,200 employees)
+========================
+
+Priya: Tom, great to meet you. Before I get into the demo, I just want to set the agenda — I'll do a quick 15-minute walkthrough of the platform, then I'd love to spend the rest of the time on your specific situation. Sound good?
+
+Tom: That works.
+
+Priya: Great. So I'll start with the candidate pipeline view... [demo portion, ~12 minutes] ...and that's essentially the end-to-end flow. What was most relevant to what you're trying to solve?
+
+Tom: The automated screening questionnaires are interesting. Right now our coordinators are doing that manually over email. It's a real time drain.
+
+Priya: How many roles are you typically running at once?
+
+Tom: We're averaging about 40 open roles at any given time. Financial services, so a lot of compliance-heavy roles. Regulatory background checks, licensing verification — it adds a layer of complexity.
+
+Priya: Right, so the screening questionnaires alone could save — what do you think, hours per week per coordinator?
+
+Tom: Probably three or four hours. We have two coordinators.
+
+Priya: So six to eight hours a week, roughly. That's meaningful. What's driving the urgency to look at this now?
+
+Tom: We had a bad quarter for time-to-hire. Average jumped from 32 days to 51 days and the business was not happy. Our CHRO put pressure on us to fix it before Q3.
+
+Priya: That's a big jump. Do you know what caused it?
+
+Tom: Honestly, it was a combination of things. We were hiring for a new product team we hadn't staffed before, so we were learning as we went. But also our ATS just wasn't giving us visibility. By the time we realised a requisition was stalling, it was already two weeks behind.
+
+Priya: That's exactly the problem our pipeline health dashboard is designed for. Can I show you that specifically?
+
+Tom: Yeah, go ahead.
+
+Priya: [demonstrates dashboard] ...so you can set thresholds — if a candidate has been at any stage for more than five days without movement, it flags automatically and pings the recruiter responsible.
+
+Tom: That's actually useful. What's the pricing look like?
+
+Priya: For your size, we're looking at around $3,200 per month on an annual contract. That includes unlimited users, all integrations, and a dedicated customer success manager.
+
+Tom: Hmm. We're also looking at Greenhouse and Lever. Greenhouse came in significantly cheaper for us.
+
+Priya: Can I ask — how much cheaper?
+
+Tom: About $900 a month less.
+
+Priya: That's a real difference. I'd push back a little on a direct comparison because our reporting layer and the automated compliance tracking are fairly unique — but I understand price matters. Is it purely cost, or are there features where Greenhouse feels like a stronger fit?
+
+Tom: Honestly? Their HRIS integrations are better for us. We're on Workday and they have a tighter native integration than I've seen from anyone else.
+
+Priya: That's fair — the Workday integration is something we've improved significantly in the last two quarters, but I'll be honest, if Greenhouse's is more mature and you're deep in Workday, that's a real consideration. Is there anything that would make you favour us over them?
+
+Tom: I think if the price was more competitive, and if I could see the Workday integration in action — we'd take a harder look.
+
+Priya: I can arrange a technical session specifically on the Workday integration with our solutions team. And I can bring the pricing question back to my manager. No promises, but let's see what we can do. Would next week work for that?
+
+Tom: Sure. But I want to be transparent with you — we're probably 60/40 toward Greenhouse right now. I want to be fair and give you the shot, but we're close to a decision.
+
+Priya: I appreciate that. I'd rather know that than not. Let me make the strongest case I can. I'll send a calendar invite today.
+
+[Follow-up note: After the technical session, prospect chose Greenhouse citing pricing and Workday integration depth. Priya flagged for product team.]
