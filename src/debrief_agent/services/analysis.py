@@ -67,11 +67,6 @@ async def generate_call_analysis(transcript: str, metadata: dict) -> dict:
             detail=f"LLM analysis failed — OpenAI API error: {exc}",
         )
 
-    print("--------------------------------")
-    print("response")
-    print(response.to_dict())
-    print("-----------------------------------")
-
     # --- Check for LLM refusal before parsing ---
     # next() scans all output items and their content parts, returning the first
     # refusal it finds, or None if there is no refusal in the response.
