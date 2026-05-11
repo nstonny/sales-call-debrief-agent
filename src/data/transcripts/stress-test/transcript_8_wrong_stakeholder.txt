@@ -1,9 +1,6 @@
 SALES CALL TRANSCRIPT 8
 ========================
 Industry: Enterprise Software / ERP
-Call Type: Demo + Advancing the Sale
-Rep Mistakes: Fails to identify that prospect is not the decision-maker, presents full demo to wrong person, no multi-threading
-Outcome: Stalled — prospect cannot advance deal internally, rep loses momentum
 Duration: 38 minutes
 Rep: Marcus Hill
 Prospect: Jenny Yoo, IT Coordinator, Calverton Manufacturing (850 employees)
@@ -46,5 +43,3 @@ Marcus: Perfect. I'll get you a proposal and a deck you can use internally.
 Jenny: That'd be helpful.
 
 Marcus: Great. I'll have it all over by Friday. Really excited about this Jenny — I think it's a great fit.
-
-[Follow-up note: Jenny presented internally. CTO requested a separate demo with technical staff. CFO had concerns about implementation timeline. No commercial champion identified. Deal stalled for 11 weeks before going quiet. Competitor won the deal after running a formal eval with the CTO directly.]

@@ -1,9 +1,6 @@
 SALES CALL TRANSCRIPT 10
 ========================
 Industry: HR Consulting / Outsourced HR Services
-Call Type: Discovery Call
-Rep Mistakes: Asks leading questions, puts words in prospect's mouth, jumps to solution before understanding problem, misses key signals
-Outcome: Prospect agrees to next step but with low intent — deal later falls through
 Duration: 24 minutes
 Rep: Natalie Cross
 Prospect: Paul Drummond, Managing Director, Drummond Recruitment Ltd (55 employees)
@@ -56,5 +53,3 @@ Paul: I'd need to understand the cost before I could say.
 Natalie: Of course, of course. I'll put something together and we can go from there. Shall we say same time next week?
 
 Paul: Sure, yeah.
-
-[Follow-up note: Paul did not attend the next meeting. His EA rescheduled twice, then he replied saying they were "not ready to look at this right now." No clear pain was ever established. Natalie led the entire conversation and assumed problems that did not exist.]

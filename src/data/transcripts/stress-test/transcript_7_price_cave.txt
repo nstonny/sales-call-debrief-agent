@@ -1,9 +1,6 @@
 SALES CALL TRANSCRIPT 7
 ========================
 Industry: Marketing Agency / Retainer Services
-Call Type: Negotiation / Closing Call
-Rep Mistakes: Caves immediately on price, offers discount without justification, undermines own value
-Outcome: Deal closed but at severely discounted rate, margin lost
 Duration: 19 minutes
 Rep: Lauren Bates
 Prospect: Chris Anand, CMO, Redpoint Consumer Goods (mid-market)
@@ -44,5 +41,3 @@ Chris: Alright. Send me the revised contract.
 Lauren: Great! Really excited to work with you Chris. I'll get that over today.
 
 Chris: Sounds good.
-
-[Follow-up note: Account flagged by finance — margin at 6,500/month monthly rolling with pause clause is below threshold. Director required Lauren to document the discount justification. No justification provided.]

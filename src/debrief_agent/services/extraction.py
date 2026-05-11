@@ -15,6 +15,7 @@ Behaviour on failure:
 """
 
 import logging
+from typing import Any, cast
 
 from fastapi import HTTPException
 from openai import AsyncOpenAI, OpenAIError
@@ -50,7 +51,7 @@ async def extract_call_metadata(transcript: str) -> dict:
             instructions=EXTRACTION_SYSTEM_PROMPT,
             input=build_extraction_user_message(transcript),
             temperature=0,                # deterministic — extraction should not be creative
-            text={"format": {"type": "json_object"}},  # guarantees valid JSON output
+            text=cast(Any, {"format": {"type": "json_object"}}),  # guarantees valid JSON output
         )
     except OpenAIError as exc:
         logger.error("OpenAI API call failed during metadata extraction: %s", exc)
@@ -65,9 +66,8 @@ async def extract_call_metadata(transcript: str) -> dict:
     refusal_part = next(
         (
             content_part
-            for item in response.output
-            if hasattr(item, "content")
-            for content_part in item.content
+            for item in (response.output or [])
+            for content_part in (getattr(item, "content", None) or [])
             if getattr(content_part, "type", None) == "refusal"
         ),
         None,  # default: no refusal found

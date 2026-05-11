@@ -5,17 +5,17 @@ Runs the LLM analysis (debrief) pass on a sales call transcript.
 Generates: summary, strengths, areas_for_improvement, action_items,
            objections_raised, competitor_mentioned, next_steps, sentiment, score.
 
-Uses the OpenAI Responses API (client.responses.create).
-Uses Pydantic (AnalysisResult) for JSON parsing, validation, and normalisation.
+Uses the OpenAI Responses API with GPT-5-mini.
+Uses Pydantic (AnalysisResult) for structured parsing + validation.
 
 Behaviour on failure:
-  - If the OpenAI call fails (network error, API error, rate limit) → raises HTTPException 502.
-  - If the LLM returns a refusal → raises HTTPException 502.
-  - If the response cannot be parsed / validated by Pydantic → raises HTTPException 502.
-  In all failure cases the caller (upload route) will roll back the transaction.
+  - OpenAI/API errors -> HTTPException 502
+  - LLM refusal -> HTTPException 502
+  - Invalid schema -> HTTPException 502
 """
 
 import logging
+from typing import Any, cast
 
 from fastapi import HTTPException
 from openai import AsyncOpenAI, OpenAIError
@@ -36,28 +36,29 @@ _client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
 async def generate_call_analysis(transcript: str, metadata: dict) -> dict:
     """
-    Send the transcript and call metadata to the OpenAI Responses API
-    and return a structured debrief.
+    Generate a structured sales call debrief using GPT-5-mini.
 
     Args:
-        transcript: The raw transcript text.
-        metadata:   Dict with keys rep_name, contact_name, contact_title, deal_stage.
-                    Used to personalise the coaching prompt.
+        transcript: Raw transcript text.
+        metadata: Dict containing:
+            - rep_name
+            - contact_name
+            - contact_title
+            - deal_stage
 
-    Returns a dict with all AnalysisResult fields. Each value is a string,
-    list, float, or None.
+    Returns:
+        Dict matching AnalysisResult schema.
 
-    Raises HTTPException(502) on any failure so the upload transaction is
-    rolled back and the caller receives a clear error message.
+    Raises:
+        HTTPException(502) on any failure.
     """
     # --- Call the LLM via Responses API ---
     try:
         response = await _client.responses.create(
-            model="gpt-4.1-mini",          # fast and cheap for structured generation
+            model="gpt-5-mini",
             instructions=ANALYSIS_SYSTEM_PROMPT,
             input=build_analysis_user_message(transcript, metadata),
-            temperature=0.3,              # slight creativity for narrative fields
-            text={"format": {"type": "json_object"}},  # guarantees valid JSON output
+            text=cast(Any, {"format": {"type": "json_object"}}),  # guarantees valid JSON output
         )
     except OpenAIError as exc:
         logger.error("OpenAI API call failed during analysis generation: %s", exc)
@@ -66,15 +67,19 @@ async def generate_call_analysis(transcript: str, metadata: dict) -> dict:
             detail=f"LLM analysis failed — OpenAI API error: {exc}",
         )
 
+    print("--------------------------------")
+    print("response")
+    print(response.to_dict())
+    print("-----------------------------------")
+
     # --- Check for LLM refusal before parsing ---
     # next() scans all output items and their content parts, returning the first
     # refusal it finds, or None if there is no refusal in the response.
     refusal_part = next(
         (
             content_part
-            for item in response.output
-            if hasattr(item, "content")
-            for content_part in item.content
+            for item in (response.output or [])
+            for content_part in (getattr(item, "content", None) or [])
             if getattr(content_part, "type", None) == "refusal"
         ),
         None,  # default: no refusal found
@@ -82,7 +87,10 @@ async def generate_call_analysis(transcript: str, metadata: dict) -> dict:
 
     if refusal_part:
         refusal_text = getattr(refusal_part, "refusal", "No reason given.")
-        logger.warning("LLM refused analysis generation request. Reason: %s", refusal_text)
+        logger.warning(
+            "LLM refused analysis generation request. Reason: %s",
+            refusal_text,
+        )
         raise HTTPException(
             status_code=502,
             detail=f"LLM refused to analyse the transcript: {refusal_text}",
@@ -90,7 +98,7 @@ async def generate_call_analysis(transcript: str, metadata: dict) -> dict:
 
     # --- Parse + validate + normalise via Pydantic ---
     # model_validate_json handles JSON parsing, field validation (incl. score range 0–10),
-    # and empty-string → None normalisation in one step.
+    # and empty-string -> None normalisation in one step.
     raw_content = response.output_text or ""
 
     try:
@@ -107,4 +115,3 @@ async def generate_call_analysis(transcript: str, metadata: dict) -> dict:
         )
 
     return result.model_dump()
-

@@ -23,3 +23,8 @@ where = ["src"]
 [build-system]
 requires = ["setuptools>=70"]
 build-backend = "setuptools.build_meta"
+
+[dependency-groups]
+dev = [
+    "jupyter>=1.1.1",
+]

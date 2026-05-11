@@ -1,9 +1,6 @@
 SALES CALL TRANSCRIPT 9
 ========================
 Industry: Telecoms / Business Broadband
-Call Type: Outbound Cold Call
-Rep Mistakes: Fails to handle hostility, gets defensive, can't recover the call
-Outcome: Call ends badly, relationship damaged
 Duration: 8 minutes
 Rep: Danny Osei
 Prospect: Robert Finch, Office Manager, Finch & Partners Solicitors (22 employees)
@@ -36,5 +33,3 @@ Robert: This is harassment. If you call this number again I'll be reporting it. 
 [Call ends]
 
 Danny: [to himself] Wow, rude.
-
-[Follow-up note: Danny called back the following day. Complaint was filed. Number blacklisted.]

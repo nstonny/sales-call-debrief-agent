@@ -1,9 +1,6 @@
 SALES CALL TRANSCRIPT 6
 ========================
 Industry: SaaS / CRM Software
-Call Type: Discovery Call
-Rep Mistakes: Over-pitching, not listening, no discovery on pain or budget
-Outcome: Prospect disengages, no next step
 Duration: 27 minutes
 Rep: Brad Holloway
 Prospect: Diane Moreau, Sales Director, Fenwick Distribution (320 employees)

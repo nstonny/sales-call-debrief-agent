@@ -160,7 +160,11 @@ if analyse_clicked and uploaded_file:
         st.success("✅ Transcript analysed successfully!")
         render_dashboard(result)
     else:
-        st.error(f"❌ Upload failed ({response.status_code}): {response.json().get('detail', 'Unknown error')}")
+        try:
+            detail = response.json().get("detail", "Unknown error")
+        except Exception:
+            detail = response.text or "Unknown error — server returned no response body"
+        st.error(f"❌ Upload failed ({response.status_code}): {detail}")
 elif not uploaded_file:
     st.markdown(
         """
