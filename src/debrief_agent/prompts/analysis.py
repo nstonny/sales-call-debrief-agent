@@ -49,6 +49,24 @@ Rules:
 """.strip()
 
 
+def build_analysis_system_prompt(rubric_text: str | None = None) -> str:
+    """
+    Builds the system prompt for analysis, optionally appending rubric guidance.
+
+    If rubric text is provided, it is treated as strict additional evaluation criteria.
+    """
+    if not rubric_text:
+        return ANALYSIS_SYSTEM_PROMPT
+
+    return (
+        f"{ANALYSIS_SYSTEM_PROMPT}\n\n"
+        "Additional evaluation rubrics (apply strictly):\n"
+        f"{rubric_text}\n\n"
+        "If rubric guidance conflicts with default coaching preferences, prioritize the rubric.\n"
+        "Still return ONLY the required JSON schema."
+    )
+
+
 def build_analysis_user_message(transcript: str, metadata: dict) -> str:
     """
     Builds the user-turn message for the analysis prompt.
@@ -77,4 +95,3 @@ def build_analysis_user_message(transcript: str, metadata: dict) -> str:
         f"Analyse the following sales call transcript and return a structured debrief as JSON:\n\n"
         f"{transcript}"
     )
-

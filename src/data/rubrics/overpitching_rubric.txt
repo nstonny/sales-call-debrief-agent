@@ -1,0 +1,45 @@
+OVERPITCHING & DISCOVERY BALANCE RUBRIC
+
+Purpose
+Evaluate whether the sales representative balanced customer discovery with product pitching.
+
+==================================================
+WHAT TO LOOK FOR
+==================================================
+
+- Open-ended discovery questions
+- Exploration of customer pain points
+- Balanced participation between rep and customer
+- Product discussion tied to customer needs
+
+==================================================
+WHAT COUNTS AS GOOD
+==================================================
+
+- Rep listens actively and asks meaningful follow-up questions
+- Customer speaks frequently and shares business challenges
+- Product explanations are concise and relevant
+
+==================================================
+WHAT COUNTS AS POOR
+==================================================
+
+- Rep dominates the conversation with feature-heavy pitching
+- Product discussion starts before understanding customer needs
+- Customer engagement is low or disengaged
+
+==================================================
+HOW TO SCORE
+==================================================
+
+- 5 = Excellent discovery and balanced conversation
+- 3 = Moderate discovery with some overpitching
+- 1 = Severe overpitching and weak customer understanding
+
+==================================================
+COMMON FAILURE PATTERNS
+==================================================
+
+- Long feature monologues
+- Generic pitching without business context
+- Ignoring customer cues or concerns

@@ -5,13 +5,17 @@ Runs the LLM analysis (debrief) pass on a sales call transcript.
 Generates: summary, strengths, areas_for_improvement, action_items,
            objections_raised, competitor_mentioned, next_steps, sentiment, score.
 
-Uses the OpenAI Responses API with GPT-5-mini.
-Uses Pydantic (AnalysisResult) for structured parsing + validation.
+Runtime behavior:
+- Loads analysis rubrics from backend configuration (DEFAULT_ANALYSIS_RUBRICS)
+  unless an internal override list is explicitly provided.
+- Injects rubric guidance into the analysis system prompt.
+- Calls the OpenAI Responses API and validates output with AnalysisResult.
 
-Behaviour on failure:
-  - OpenAI/API errors -> HTTPException 502
-  - LLM refusal -> HTTPException 502
-  - Invalid schema -> HTTPException 502
+Failure behavior:
+- OpenAI/API errors -> HTTPException 502
+- LLM refusal -> HTTPException 502
+- Invalid schema -> HTTPException 502
+- Invalid/missing rubric file -> HTTPException 422
 """
 
 import logging
@@ -21,11 +25,12 @@ from fastapi import HTTPException
 from openai import AsyncOpenAI, OpenAIError
 from pydantic import ValidationError
 
-from debrief_agent.core.config import OPENAI_API_KEY
+from debrief_agent.core.config import DEFAULT_ANALYSIS_RUBRICS, OPENAI_API_KEY
 from debrief_agent.prompts.analysis import (
-    ANALYSIS_SYSTEM_PROMPT,
+    build_analysis_system_prompt,
     build_analysis_user_message,
 )
+from debrief_agent.prompts.rubrics import load_rubric_text
 from debrief_agent.schemas.analysis import AnalysisResult
 
 logger = logging.getLogger(__name__)
@@ -34,29 +39,46 @@ logger = logging.getLogger(__name__)
 _client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
 
-async def generate_call_analysis(transcript: str, metadata: dict) -> dict:
+async def generate_call_analysis(
+    transcript: str,
+    metadata: dict,
+    rubric_names: list[str] | None = None,
+) -> dict:
     """
-    Generate a structured sales call debrief using GPT-5-mini.
+    Generate a structured sales call debrief from transcript + call metadata.
+
+    Rubrics:
+    - If ``rubric_names`` is provided, those rubric files are used.
+    - Otherwise the backend default rubric set (DEFAULT_ANALYSIS_RUBRICS) is used.
+    - Rubric text is appended to the system prompt and treated as strict guidance.
 
     Args:
         transcript: Raw transcript text.
-        metadata: Dict containing:
-            - rep_name
-            - contact_name
-            - contact_title
-            - deal_stage
+        metadata: Dict containing rep_name, contact_name, contact_title, deal_stage.
+        rubric_names: Optional internal override list of rubric file names
+            (with or without ".txt"). Not user-facing.
 
     Returns:
-        Dict matching AnalysisResult schema.
+        A dict matching ``AnalysisResult``.
 
     Raises:
-        HTTPException(502) on any failure.
+        HTTPException(422): Rubric names are invalid or rubric files are missing.
+        HTTPException(502): OpenAI error, model refusal, or schema validation failure.
     """
+    # Resolve rubric set: caller override or backend default.
+    effective_rubrics = rubric_names if rubric_names is not None else DEFAULT_ANALYSIS_RUBRICS
+    try:
+        rubric_text = load_rubric_text(effective_rubrics)
+    except (FileNotFoundError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
+    system_prompt = build_analysis_system_prompt(rubric_text or None)
+
     # --- Call the LLM via Responses API ---
     try:
         response = await _client.responses.create(
             model="gpt-5-mini",
-            instructions=ANALYSIS_SYSTEM_PROMPT,
+            instructions=system_prompt,
             input=build_analysis_user_message(transcript, metadata),
             text=cast(Any, {"format": {"type": "json_object"}}),  # guarantees valid JSON output
         )
