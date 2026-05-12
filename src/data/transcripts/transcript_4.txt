@@ -1,0 +1,19 @@
+Rep (Chris): Our platform has AI summaries, dashboards, analytics, CRM syncing, coaching insights, automated follow-ups, and reporting features.
+
+Customer (Emma, Operations Manager): Okay... but our main issue is onboarding new reps faster.
+
+Rep: Right, and our analytics dashboard is extremely advanced.
+
+Customer: How exactly would it help onboarding?
+
+Rep: Well, managers can see lots of performance metrics.
+
+Customer: I'm not sure I fully understand the value yet.
+
+Rep: We also support Slack integrations and custom workflows.
+
+Customer: Okay...
+
+Rep: I can send more materials after the call.
+
+Customer: Sure, let's do that.

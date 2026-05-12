@@ -1,0 +1,17 @@
+Rep (Olivia): Let me show you how the AI identifies objections and generates coaching insights automatically.
+
+Customer (David, Sales Director): That's impressive. We currently do this manually.
+
+Rep: Managers can also track rep performance trends over time.
+
+Customer: That would save us hours every week.
+
+Rep: It integrates directly into your CRM as well.
+
+Customer: Nice. Our RevOps team would love that.
+
+Rep: Many teams start with a pilot before rolling out company-wide.
+
+Customer: That makes sense. I'd like to move forward with a pilot.
+
+Rep: Perfect. I'll coordinate the setup.
