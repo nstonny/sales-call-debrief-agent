@@ -58,8 +58,7 @@ async def _run_one(transcript_path: Path, rubrics: list[str]) -> list[dict]:
                 "metadata": metadata,
                 "analysis": analysis,
                 "score": analysis.get("score"),
-                "sentiment": analysis.get("sentiment"),
-                "summary": analysis.get("summary"),
+                "sentiment": analysis.get("sentiment")
             }
         )
     return rows
