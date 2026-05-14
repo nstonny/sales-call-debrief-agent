@@ -85,7 +85,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 ### 1) Clone and enter project
 
 ```zsh
-git clone <your-repo-url>
+git clone https://github.com/nstonny/sales-call-debrief-agent.git
 cd sales-call-debrief-agent
 ```
 
@@ -283,3 +283,5 @@ From `src/debrief_agent/core/config.py`:
     ```zsh
     uv --version
     ```
+
+
