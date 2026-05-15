@@ -37,7 +37,7 @@ def render_dashboard(result: dict) -> None:
     col5, col6, col7 = st.columns(3)
     with col5:
         st.markdown("**🏆 Score**")
-        st.write(f"{score:.1f} / 10" if score is not None else "—")
+        st.write(f"{score:.1f} / 5" if score is not None else "—")
     with col6:
         st.markdown("**💬 Sentiment**")
         st.write(sentiment.capitalize() if sentiment else "—")

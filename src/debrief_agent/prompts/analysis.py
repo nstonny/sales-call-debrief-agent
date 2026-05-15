@@ -29,15 +29,14 @@ Return ONLY a valid JSON object with exactly these keys:
   "competitor_mentioned":   string or null,   // Name of any competitor mentioned, or null
   "next_steps":             string or null,   // What was agreed as the next step at the end of the call
   "sentiment":              string,           // Overall call sentiment: "positive", "neutral", or "negative"
-  "score":                  number            // Overall rep performance score from 0.0 to 10.0
+  "score":                  number            // Overall rep performance score from 0.0 to 5.0
 }
 
 Scoring guide for "score":
-  9–10 : Excellent — strong discovery, clear value articulation, objections handled, next step secured
-  7–8  : Good — mostly effective, minor gaps
-  5–6  : Average — some positives but notable missed opportunities
-  3–4  : Below average — multiple weaknesses, deal at risk
-  0–2  : Poor — significant rep errors, relationship or deal likely damaged
+
+  5 : Excellent — strong discovery, clear value articulation, objections handled, next step secured
+  3 : Average — some positives but notable missed opportunities
+  1 : Poor — significant rep errors, relationship or deal likely damaged
 
 Rules:
 - Use the call context (contact title, deal stage) to calibrate your coaching.
@@ -63,9 +62,9 @@ def build_analysis_system_prompt(rubric_text: str | None = None) -> str:
         "Additional evaluation rubrics (apply strictly):\n"
         f"{rubric_text}\n\n"
         "If rubric guidance conflicts with default coaching preferences, prioritize the rubric.\n"
+        "Follow the scoring guide in the 'HOW TO SCORE' section of the rubric text files and not the 'score' field above.\n"
         "Still return ONLY the required JSON schema."
     )
-
 
 def build_analysis_user_message(transcript: str, metadata: dict) -> str:
     """
