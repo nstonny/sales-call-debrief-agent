@@ -1,11 +1,15 @@
 """
-CLI utility to compare LLM analysis outputs across different rubrics.
+CLI utility to run transcript analysis with a selected rubric set.
 
 Usage:
     uv run python -m debrief_agent.app.run_rubric_experiments \
       --rubrics overpitching_rubric.txt,discovery_rubric.txt,pricing_negotiation_rubric.txt \
       --transcripts-glob "src/data/transcripts/**/*.txt" \
       --limit 5
+
+Behavior:
+- Runs exactly one analysis per transcript.
+- If multiple rubrics are provided, all are injected together in one prompt.
 
 Outputs:
 - Prints a compact per-run summary to stdout.
@@ -38,30 +42,27 @@ def _iter_transcripts(glob_pattern: str, limit: int | None) -> Iterable[Path]:
     return txt_paths[:limit] if limit else txt_paths
 
 
-async def _run_one(transcript_path: Path, rubrics: list[str]) -> list[dict]:
+async def _run_one(transcript_path: Path, rubrics: list[str]) -> dict:
     transcript_text = transcript_path.read_text(encoding="utf-8")
     metadata = await extract_call_metadata(transcript_text)
 
-    rows: list[dict] = []
-    for rubric in rubrics:
-        analysis = await generate_call_analysis(
-            transcript=transcript_text,
-            metadata=metadata,
-            rubric_names=[rubric],
-        )
-        rows.append(
-            {
-                "timestamp_utc": datetime.now(timezone.utc).isoformat(),
-                "transcript_path": str(transcript_path),
-                "transcript_name": transcript_path.name,
-                "rubric": rubric,
-                "metadata": metadata,
-                "analysis": analysis,
-                "score": analysis.get("score"),
-                "sentiment": analysis.get("sentiment")
-            }
-        )
-    return rows
+    # Inject all selected rubrics together and generate one analysis object.
+    analysis = await generate_call_analysis(
+        transcript=transcript_text,
+        metadata=metadata,
+        rubric_names=rubrics,
+    )
+
+    return {
+        "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+        "transcript_path": str(transcript_path),
+        "transcript_name": transcript_path.name,
+        "rubrics": rubrics,
+        "metadata": metadata,
+        "analysis": analysis,
+        "score": analysis.get("score"),
+        "sentiment": analysis.get("sentiment"),
+    }
 
 
 async def main() -> None:
@@ -109,14 +110,13 @@ async def main() -> None:
     total_runs = 0
     with out_path.open("w", encoding="utf-8") as fh:
         for transcript_path in transcripts:
-            rows = await _run_one(transcript_path, rubrics)
-            for row in rows:
-                fh.write(json.dumps(row, ensure_ascii=False) + "\n")
-                total_runs += 1
-                print(
-                    f"[{row['transcript_name']}] rubric={row['rubric']} "
-                    f"score={row['score']} sentiment={row['sentiment']}"
-                )
+            row = await _run_one(transcript_path, rubrics)
+            fh.write(json.dumps(row, ensure_ascii=False) + "\n")
+            total_runs += 1
+            print(
+                f"[{row['transcript_name']}] rubrics={','.join(row['rubrics'])} "
+                f"score={row['score']} sentiment={row['sentiment']}"
+            )
 
     print(f"\nCompleted {total_runs} runs across {len(transcripts)} transcripts.")
     print(f"Saved full results to: {out_path}")
@@ -124,4 +124,3 @@ async def main() -> None:
 
 if __name__ == "__main__":
     asyncio.run(main())
-

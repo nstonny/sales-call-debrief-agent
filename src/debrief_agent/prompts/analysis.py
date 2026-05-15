@@ -5,11 +5,11 @@
 # using the metadata extracted in the first pass (rep name, contact title,
 # deal stage, etc.) so the LLM can tailor its coaching accordingly.
 #
-# Editing guide:
-#   - Adjust ANALYSIS_SYSTEM_PROMPT to change the debrief structure or
-#     the coaching focus areas.
-#   - build_analysis_user_message() injects both the metadata context and
-#     the raw transcript into the user turn.
+# This module exposes two prompt builders:
+#   - build_analysis_system_prompt(): returns the base system prompt and,
+#     when provided, appends rubric text as strict additional guidance.
+#   - build_analysis_user_message(): injects metadata context and transcript
+#     into the user turn.
 # ---------------------------------------------------------------------------
 
 ANALYSIS_SYSTEM_PROMPT = """
@@ -50,9 +50,17 @@ Rules:
 
 def build_analysis_system_prompt(rubric_text: str | None = None) -> str:
     """
-    Builds the system prompt for analysis, optionally appending rubric guidance.
+    Build the analysis system prompt.
 
-    If rubric text is provided, it is treated as strict additional evaluation criteria.
+    When `rubric_text` is provided, it is appended as strict evaluation
+    guidance. In rubric-enabled runs, rubric scoring guidance takes precedence
+    over the default inline score examples in `ANALYSIS_SYSTEM_PROMPT`.
+
+    Args:
+        rubric_text: Combined rubric text (or None).
+
+    Returns:
+        Final system prompt string to send to the LLM.
     """
     if not rubric_text:
         return ANALYSIS_SYSTEM_PROMPT
@@ -66,16 +74,22 @@ def build_analysis_system_prompt(rubric_text: str | None = None) -> str:
         "Still return ONLY the required JSON schema."
     )
 
+
 def build_analysis_user_message(transcript: str, metadata: dict) -> str:
     """
-    Builds the user-turn message for the analysis prompt.
+    Build the user-turn prompt for analysis.
 
-    Injects the extracted call metadata as context so the LLM can personalise
-    its coaching (e.g. tailor advice based on the contact's title or deal stage).
+    Adds extracted metadata context so the model can tailor coaching output to
+    role and stage (for example, CTO vs. non-technical buyer, discovery vs.
+    negotiation).
 
     Args:
-        transcript: The raw transcript text.
-        metadata:   Dict with keys rep_name, contact_name, contact_title, deal_stage.
+        transcript: Raw transcript text.
+        metadata: Dict with keys `rep_name`, `contact_name`,
+            `contact_title`, and `deal_stage`.
+
+    Returns:
+        User message string containing context block + transcript.
     """
     rep = metadata.get("rep_name") or "Unknown rep"
     contact = metadata.get("contact_name") or "Unknown contact"

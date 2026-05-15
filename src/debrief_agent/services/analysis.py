@@ -1,15 +1,26 @@
 """
 services/analysis.py
 
-Runs the LLM analysis (debrief) pass on a sales call transcript.
-Generates: summary, strengths, areas_for_improvement, action_items,
-           objections_raised, competitor_mentioned, next_steps, sentiment, score.
+Runs the LLM analysis (debrief) pass on a sales call transcript and returns
+structured coaching output.
+
+Generated fields:
+- summary
+- strengths
+- areas_for_improvement
+- action_items
+- objections_raised
+- competitor_mentioned
+- next_steps
+- sentiment
+- score
 
 Runtime behavior:
-- Loads analysis rubrics from backend configuration (DEFAULT_ANALYSIS_RUBRICS)
-  unless an internal override list is explicitly provided.
-- Injects rubric guidance into the analysis system prompt.
-- Calls the OpenAI Responses API and validates output with AnalysisResult.
+- Resolves rubric files from backend defaults (`DEFAULT_ANALYSIS_RUBRICS`)
+  unless an internal override list is provided.
+- Injects all resolved rubric text into the system prompt as strict guidance.
+- Calls the OpenAI Responses API and validates/parses output with
+  `AnalysisResult`.
 
 Failure behavior:
 - OpenAI/API errors -> HTTPException 502
@@ -45,21 +56,23 @@ async def generate_call_analysis(
     rubric_names: list[str] | None = None,
 ) -> dict:
     """
-    Generate a structured sales call debrief from transcript + call metadata.
+    Generate one structured sales-call debrief from transcript + metadata.
 
     Rubrics:
-    - If ``rubric_names`` is provided, those rubric files are used.
-    - Otherwise the backend default rubric set (DEFAULT_ANALYSIS_RUBRICS) is used.
-    - Rubric text is appended to the system prompt and treated as strict guidance.
+    - If `rubric_names` is provided, those files are used.
+    - Otherwise backend defaults (`DEFAULT_ANALYSIS_RUBRICS`) are used.
+    - When multiple rubrics are present, all are injected together into one
+      system prompt for a single analysis output.
 
     Args:
         transcript: Raw transcript text.
-        metadata: Dict containing rep_name, contact_name, contact_title, deal_stage.
+        metadata: Dict containing `rep_name`, `contact_name`,
+            `contact_title`, and `deal_stage`.
         rubric_names: Optional internal override list of rubric file names
-            (with or without ".txt"). Not user-facing.
+            (with or without `.txt`). Not user-facing.
 
     Returns:
-        A dict matching ``AnalysisResult``.
+        Dict matching `AnalysisResult`.
 
     Raises:
         HTTPException(422): Rubric names are invalid or rubric files are missing.
@@ -114,8 +127,8 @@ async def generate_call_analysis(
         )
 
     # --- Parse + validate + normalise via Pydantic ---
-    # model_validate_json handles JSON parsing, field validation (incl. score range 0–10),
-    # and empty-string -> None normalisation in one step.
+    # model_validate_json handles JSON parsing, schema validation, and
+    # empty-string -> None normalisation in one step.
     raw_content = response.output_text or ""
 
     try:
