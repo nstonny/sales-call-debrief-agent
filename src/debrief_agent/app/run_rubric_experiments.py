@@ -4,11 +4,10 @@ CLI utility to run transcript analysis with a selected rubric set.
 Usage:
     uv run python -m debrief_agent.app.run_rubric_experiments \
       --rubrics overpitching_rubric.txt,discovery_rubric.txt,pricing_negotiation_rubric.txt \
-      --transcripts-glob "src/data/transcripts/**/*.txt" \
-      --limit 5
+      --transcripts-glob "src/data/transcripts/transcript_6.txt"
 
 Behavior:
-- Runs exactly one analysis per transcript.
+- Runs exactly one analysis per command invocation.
 - If multiple rubrics are provided, all are injected together in one prompt.
 
 Outputs:
@@ -20,54 +19,19 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import json
-from datetime import datetime, timezone
-from pathlib import Path
-from typing import Iterable
 
-from debrief_agent.core.config import DEFAULT_ANALYSIS_RUBRICS
-from debrief_agent.services.analysis import generate_call_analysis
-from debrief_agent.services.extraction import extract_call_metadata
+from debrief_agent.app.experiment_runner import ExperimentRunner
 
 
-def _parse_rubrics(raw: str | None) -> list[str]:
+def _parse_rubrics(raw: str | None) -> list[str] | None:
     if not raw:
-        return DEFAULT_ANALYSIS_RUBRICS
+        return None
     return [item.strip() for item in raw.split(",") if item.strip()]
-
-
-def _iter_transcripts(glob_pattern: str, limit: int | None) -> Iterable[Path]:
-    paths = sorted(Path.cwd().glob(glob_pattern))
-    txt_paths = [p for p in paths if p.is_file() and p.suffix.lower() == ".txt"]
-    return txt_paths[:limit] if limit else txt_paths
-
-
-async def _run_one(transcript_path: Path, rubrics: list[str]) -> dict:
-    transcript_text = transcript_path.read_text(encoding="utf-8")
-    metadata = await extract_call_metadata(transcript_text)
-
-    # Inject all selected rubrics together and generate one analysis object.
-    analysis = await generate_call_analysis(
-        transcript=transcript_text,
-        metadata=metadata,
-        rubric_names=rubrics,
-    )
-
-    return {
-        "timestamp_utc": datetime.now(timezone.utc).isoformat(),
-        "transcript_path": str(transcript_path),
-        "transcript_name": transcript_path.name,
-        "rubrics": rubrics,
-        "metadata": metadata,
-        "analysis": analysis,
-        "score": analysis.get("score"),
-        "sentiment": analysis.get("sentiment"),
-    }
 
 
 async def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Run transcript analysis across one or more rubrics and compare outputs.",
+        description="Run one analysis for one transcript with a selected rubric set.",
     )
     parser.add_argument(
         "--rubrics",
@@ -81,14 +45,8 @@ async def main() -> None:
     parser.add_argument(
         "--transcripts-glob",
         type=str,
-        default="src/data/transcripts/**/*.txt",
-        help="Glob pattern to select transcript files.",
-    )
-    parser.add_argument(
-        "--limit",
-        type=int,
-        default=None,
-        help="Optional max number of transcript files to process.",
+        default="src/data/transcripts/transcript_1.txt",
+        help="Glob pattern that must resolve to exactly one transcript file.",
     )
     parser.add_argument(
         "--out",
@@ -98,28 +56,15 @@ async def main() -> None:
     )
     args = parser.parse_args()
 
-    rubrics = _parse_rubrics(args.rubrics)
-    transcripts = list(_iter_transcripts(args.transcripts_glob, args.limit))
+    runner = ExperimentRunner(
+        rubrics=_parse_rubrics(args.rubrics),
+        transcripts_glob=args.transcripts_glob,
+        out_path=args.out,
+    )
+    total_runs, transcript_count = await runner.run()
 
-    if not transcripts:
-        raise SystemExit(f"No transcript files found for pattern: {args.transcripts_glob}")
-
-    out_path = Path(args.out)
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-
-    total_runs = 0
-    with out_path.open("w", encoding="utf-8") as fh:
-        for transcript_path in transcripts:
-            row = await _run_one(transcript_path, rubrics)
-            fh.write(json.dumps(row, ensure_ascii=False) + "\n")
-            total_runs += 1
-            print(
-                f"[{row['transcript_name']}] rubrics={','.join(row['rubrics'])} "
-                f"score={row['score']} sentiment={row['sentiment']}"
-            )
-
-    print(f"\nCompleted {total_runs} runs across {len(transcripts)} transcripts.")
-    print(f"Saved full results to: {out_path}")
+    print(f"\nCompleted {total_runs} run across {transcript_count} transcript.")
+    print(f"Saved full results to: {runner.out_path}")
 
 
 if __name__ == "__main__":

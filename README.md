@@ -169,20 +169,14 @@ curl -X POST "http://localhost:8000/api/upload" \
 
 CLI module: `src/debrief_agent/app/run_rubric_experiments.py`
 
-It runs transcripts through extraction + analysis and writes one JSON object per run to JSONL.
+It runs extraction + analysis for exactly one transcript per command and writes one JSON object to JSONL.
 
 ### Default bundled run (recommended)
 
-Uses bundled transcript paths (`src/data/transcripts/**/*.txt`) and backend default rubrics from config.
+Uses bundled transcript path `src/data/transcripts/transcript_1.txt` and backend default rubrics from config.
 
 ```zsh
 uv run python -m debrief_agent.app.run_rubric_experiments
-```
-
-### Default bundled run with transcript limit
-
-```zsh
-uv run python -m debrief_agent.app.run_rubric_experiments --limit 5
 ```
 
 ### Single bundled transcript + one rubric
@@ -220,7 +214,7 @@ from pathlib import Path
 
 for line in Path("experiments/rubric_runs.jsonl").read_text(encoding="utf-8").splitlines():
     row = json.loads(line)
-    print(f"{row['transcript_name']} | {row['rubric']} | score={row['score']} | sentiment={row['sentiment']}")
+    print(f"{row['transcript_name']} | rubrics={','.join(row['rubrics'])} | score={row['score']} | sentiment={row['sentiment']}")
 PY
 ```
 
@@ -283,5 +277,3 @@ From `src/debrief_agent/core/config.py`:
     ```zsh
     uv --version
     ```
-
-
