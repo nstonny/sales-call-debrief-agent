@@ -3,8 +3,9 @@ CLI utility to run transcript analysis with a selected rubric set.
 
 Usage:
     uv run python -m debrief_agent.app.run_rubric_experiments \
+      --transcript "src/data/transcripts/transcript_6.txt" \
       --rubrics overpitching_rubric.txt,discovery_rubric.txt,pricing_negotiation_rubric.txt \
-      --transcripts-glob "src/data/transcripts/transcript_6.txt"
+      --out "experiments/transcript_6_all_rubrics.jsonl"
 
 Behavior:
 - Runs exactly one analysis per command invocation.
@@ -19,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+from pathlib import Path
 
 from debrief_agent.app.experiment_runner import ExperimentRunner
 
@@ -34,6 +36,12 @@ async def main() -> None:
         description="Run one analysis for one transcript with a selected rubric set.",
     )
     parser.add_argument(
+        "--transcript",
+        type=Path,
+        required=True,
+        help="Path to a single transcript .txt file.",
+    )
+    parser.add_argument(
         "--rubrics",
         type=str,
         default=None,
@@ -43,14 +51,8 @@ async def main() -> None:
         ),
     )
     parser.add_argument(
-        "--transcripts-glob",
-        type=str,
-        default="src/data/transcripts/transcript_1.txt",
-        help="Glob pattern that must resolve to exactly one transcript file.",
-    )
-    parser.add_argument(
         "--out",
-        type=str,
+        type=Path,
         default="experiments/rubric_runs.jsonl",
         help="Output JSONL path for full results.",
     )
@@ -58,8 +60,8 @@ async def main() -> None:
 
     runner = ExperimentRunner(
         rubrics=_parse_rubrics(args.rubrics),
-        transcripts_glob=args.transcripts_glob,
-        out_path=args.out,
+        transcript_path=str(args.transcript),
+        out_path=str(args.out),
     )
     total_runs, transcript_count = await runner.run()
 

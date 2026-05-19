@@ -165,26 +165,54 @@ curl -X POST "http://localhost:8000/api/upload" \
   -F "deal_value=25000"
 ```
 
+### Service usage (internal)
+
+Preferred pattern in new code is class-based services:
+
+```python
+from debrief_agent.services.analysis import CallAnalyzer
+from debrief_agent.services.extraction import MetadataExtractor
+
+metadata_extractor = MetadataExtractor()
+call_analyzer = CallAnalyzer()
+
+metadata = await metadata_extractor.extract(transcript_text)
+analysis = await call_analyzer.analyze(
+    transcript=transcript_text,
+    metadata=metadata,
+    rubric_names=["overpitching_rubric.txt"],
+)
+```
+
+Legacy function wrappers are still available for backward compatibility:
+
+```python
+from debrief_agent.services.analysis import generate_call_analysis
+from debrief_agent.services.extraction import extract_call_metadata
+
+metadata = await extract_call_metadata(transcript_text)
+analysis = await generate_call_analysis(transcript_text, metadata)
+```
+
 ## Experiments CLI (Rubric Testing)
 
 CLI module: `src/debrief_agent/app/run_rubric_experiments.py`
 
 It runs extraction + analysis for exactly one transcript per command and writes one JSON object to JSONL.
 
-### Default bundled run (recommended)
-
-Uses bundled transcript path `src/data/transcripts/transcript_1.txt` and backend default rubrics from config.
+### Single bundled transcript + backend default rubrics
 
 ```zsh
-uv run python -m debrief_agent.app.run_rubric_experiments
+uv run python -m debrief_agent.app.run_rubric_experiments \
+  --transcript "src/data/transcripts/transcript_1.txt"
 ```
 
 ### Single bundled transcript + one rubric
 
 ```zsh
 uv run python -m debrief_agent.app.run_rubric_experiments \
+  --transcript "src/data/transcripts/transcript_6.txt" \
   --rubrics overpitching_rubric.txt \
-  --transcripts-glob "src/data/transcripts/transcript_6.txt" \
   --out "experiments/transcript_6_overpitching.jsonl"
 ```
 
@@ -192,8 +220,8 @@ uv run python -m debrief_agent.app.run_rubric_experiments \
 
 ```zsh
 uv run python -m debrief_agent.app.run_rubric_experiments \
+  --transcript "src/data/transcripts/transcript_6.txt" \
   --rubrics overpitching_rubric.txt,discovery_rubric.txt,pricing_negotiation_rubric.txt \
-  --transcripts-glob "src/data/transcripts/transcript_6.txt" \
   --out "experiments/transcript_6_all_rubrics.jsonl"
 ```
 

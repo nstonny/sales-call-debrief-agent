@@ -22,6 +22,10 @@ Runtime behavior:
 - Calls the OpenAI Responses API and validates/parses output with
   `AnalysisResult`.
 
+Primary API:
+- `CallAnalyzer.analyze(...)` is the preferred class-based entrypoint.
+- `generate_call_analysis(...)` is kept as a compatibility wrapper for older callers.
+
 Failure behavior:
 - OpenAI/API errors -> HTTPException 502
 - LLM refusal -> HTTPException 502
@@ -50,98 +54,100 @@ logger = logging.getLogger(__name__)
 _client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
 
+class CallAnalyzer:
+    """Service class that generates structured debrief analysis for one call."""
+
+    def __init__(self, client: AsyncOpenAI | None = None) -> None:
+        self._client = client or _client
+
+    async def analyze(
+        self,
+        transcript: str,
+        metadata: dict,
+        rubric_names: list[str] | None = None,
+    ) -> dict:
+        """Generate one validated analysis object from transcript, metadata, and rubrics."""
+        # Resolve rubric set: caller override or backend default.
+        effective_rubrics = rubric_names if rubric_names is not None else DEFAULT_ANALYSIS_RUBRICS
+        try:
+            rubric_text = load_rubric_text(effective_rubrics)
+        except (FileNotFoundError, ValueError) as exc:
+            raise HTTPException(status_code=422, detail=str(exc))
+
+        system_prompt = build_analysis_system_prompt(rubric_text or None)
+
+        # --- Call the LLM via Responses API ---
+        try:
+            response = await self._client.responses.create(
+                model="gpt-5-mini",
+                instructions=system_prompt,
+                input=build_analysis_user_message(transcript, metadata),
+                text=cast(Any, {"format": {"type": "json_object"}}),  # guarantees valid JSON output
+            )
+        except OpenAIError as exc:
+            logger.error("OpenAI API call failed during analysis generation: %s", exc)
+            raise HTTPException(
+                status_code=502,
+                detail=f"LLM analysis failed — OpenAI API error: {exc}",
+            )
+
+        # --- Check for LLM refusal before parsing ---
+        # next() scans all output items and their content parts, returning the first
+        # refusal it finds, or None if there is no refusal in the response.
+        refusal_part = next(
+            (
+                content_part
+                for item in (response.output or [])
+                for content_part in (getattr(item, "content", None) or [])
+                if getattr(content_part, "type", None) == "refusal"
+            ),
+            None,  # default: no refusal found
+        )
+
+        if refusal_part:
+            refusal_text = getattr(refusal_part, "refusal", "No reason given.")
+            logger.warning(
+                "LLM refused analysis generation request. Reason: %s",
+                refusal_text,
+            )
+            raise HTTPException(
+                status_code=502,
+                detail=f"LLM refused to analyse the transcript: {refusal_text}",
+            )
+
+        # --- Parse + validate + normalise via Pydantic ---
+        # model_validate_json handles JSON parsing, schema validation, and
+        # empty-string -> None normalisation in one step.
+        raw_content = response.output_text or ""
+
+        try:
+            result = AnalysisResult.model_validate_json(raw_content)
+        except ValidationError as exc:
+            logger.error(
+                "LLM analysis response failed Pydantic validation. Raw content: %r — Errors: %s",
+                raw_content,
+                exc,
+            )
+            raise HTTPException(
+                status_code=502,
+                detail="LLM analysis failed — response did not match expected schema.",
+            )
+
+        return result.model_dump()
+
+
+_default_call_analyzer = CallAnalyzer()
+
+
 async def generate_call_analysis(
     transcript: str,
     metadata: dict,
     rubric_names: list[str] | None = None,
 ) -> dict:
-    """
-    Generate one structured sales-call debrief from transcript + metadata.
-
-    Rubrics:
-    - If `rubric_names` is provided, those files are used.
-    - Otherwise backend defaults (`DEFAULT_ANALYSIS_RUBRICS`) are used.
-    - When multiple rubrics are present, all are injected together into one
-      system prompt for a single analysis output.
-
-    Args:
-        transcript: Raw transcript text.
-        metadata: Dict containing `rep_name`, `contact_name`,
-            `contact_title`, and `deal_stage`.
-        rubric_names: Optional internal override list of rubric file names
-            (with or without `.txt`). Not user-facing.
-
-    Returns:
-        Dict matching `AnalysisResult`.
-
-    Raises:
-        HTTPException(422): Rubric names are invalid or rubric files are missing.
-        HTTPException(502): OpenAI error, model refusal, or schema validation failure.
-    """
-    # Resolve rubric set: caller override or backend default.
-    effective_rubrics = rubric_names if rubric_names is not None else DEFAULT_ANALYSIS_RUBRICS
-    try:
-        rubric_text = load_rubric_text(effective_rubrics)
-    except (FileNotFoundError, ValueError) as exc:
-        raise HTTPException(status_code=422, detail=str(exc))
-
-    system_prompt = build_analysis_system_prompt(rubric_text or None)
-
-    # --- Call the LLM via Responses API ---
-    try:
-        response = await _client.responses.create(
-            model="gpt-5-mini",
-            instructions=system_prompt,
-            input=build_analysis_user_message(transcript, metadata),
-            text=cast(Any, {"format": {"type": "json_object"}}),  # guarantees valid JSON output
-        )
-    except OpenAIError as exc:
-        logger.error("OpenAI API call failed during analysis generation: %s", exc)
-        raise HTTPException(
-            status_code=502,
-            detail=f"LLM analysis failed — OpenAI API error: {exc}",
-        )
-
-    # --- Check for LLM refusal before parsing ---
-    # next() scans all output items and their content parts, returning the first
-    # refusal it finds, or None if there is no refusal in the response.
-    refusal_part = next(
-        (
-            content_part
-            for item in (response.output or [])
-            for content_part in (getattr(item, "content", None) or [])
-            if getattr(content_part, "type", None) == "refusal"
-        ),
-        None,  # default: no refusal found
+    """Compatibility wrapper for legacy callers; new code should use CallAnalyzer."""
+    return await _default_call_analyzer.analyze(
+        transcript=transcript,
+        metadata=metadata,
+        rubric_names=rubric_names,
     )
 
-    if refusal_part:
-        refusal_text = getattr(refusal_part, "refusal", "No reason given.")
-        logger.warning(
-            "LLM refused analysis generation request. Reason: %s",
-            refusal_text,
-        )
-        raise HTTPException(
-            status_code=502,
-            detail=f"LLM refused to analyse the transcript: {refusal_text}",
-        )
-
-    # --- Parse + validate + normalise via Pydantic ---
-    # model_validate_json handles JSON parsing, schema validation, and
-    # empty-string -> None normalisation in one step.
-    raw_content = response.output_text or ""
-
-    try:
-        result = AnalysisResult.model_validate_json(raw_content)
-    except ValidationError as exc:
-        logger.error(
-            "LLM analysis response failed Pydantic validation. Raw content: %r — Errors: %s",
-            raw_content,
-            exc,
-        )
-        raise HTTPException(
-            status_code=502,
-            detail="LLM analysis failed — response did not match expected schema.",
-        )
-
-    return result.model_dump()

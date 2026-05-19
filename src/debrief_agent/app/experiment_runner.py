@@ -5,8 +5,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from debrief_agent.core.config import DEFAULT_ANALYSIS_RUBRICS
-from debrief_agent.services.analysis import generate_call_analysis
-from debrief_agent.services.extraction import extract_call_metadata
+from debrief_agent.services.analysis import CallAnalyzer
+from debrief_agent.services.extraction import MetadataExtractor
 
 
 class ExperimentRunner:
@@ -15,12 +15,14 @@ class ExperimentRunner:
     def __init__(
         self,
         rubrics: list[str] | None = None,
-        transcripts_glob: str = "src/data/transcripts/**/*.txt",
+        transcript_path: str = "src/data/transcripts/transcript_1.txt",
         out_path: str = "experiments/rubric_runs.jsonl",
     ) -> None:
         self.rubrics = self._resolve_rubrics(rubrics)
-        self.transcripts_glob = transcripts_glob
+        self.transcript_path = Path(transcript_path)
         self.out_path = Path(out_path)
+        self.metadata_extractor = MetadataExtractor()
+        self.call_analyzer = CallAnalyzer()
 
     @staticmethod
     def _resolve_rubrics(raw: list[str] | None) -> list[str]:
@@ -29,26 +31,20 @@ class ExperimentRunner:
         return [item.strip() for item in raw if item.strip()]
 
     def resolve_transcript(self) -> Path:
-        paths = sorted(Path.cwd().glob(self.transcripts_glob))
-        txt_paths = [p for p in paths if p.is_file() and p.suffix.lower() == ".txt"]
-
-        if not txt_paths:
-            raise SystemExit(f"No transcript files found for pattern: {self.transcripts_glob}")
-        if len(txt_paths) > 1:
+        if not self.transcript_path.exists() or not self.transcript_path.is_file():
+            raise SystemExit(f"Transcript file not found: {self.transcript_path}")
+        if self.transcript_path.suffix.lower() != ".txt":
             raise SystemExit(
-                "Expected exactly one transcript file, "
-                f"but found {len(txt_paths)} for pattern: {self.transcripts_glob}. "
-                "Use a narrower --transcripts-glob pattern."
+                f"Transcript file must be .txt, got: {self.transcript_path}"
             )
-
-        return txt_paths[0]
+        return self.transcript_path
 
     async def run_one(self, transcript_path: Path) -> dict:
         transcript_text = transcript_path.read_text(encoding="utf-8")
-        metadata = await extract_call_metadata(transcript_text)
+        metadata = await self.metadata_extractor.extract(transcript_text)
 
         # Inject all selected rubrics together and generate one analysis object.
-        analysis = await generate_call_analysis(
+        analysis = await self.call_analyzer.analyze(
             transcript=transcript_text,
             metadata=metadata,
             rubric_names=self.rubrics,

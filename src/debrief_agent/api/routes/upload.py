@@ -7,10 +7,12 @@ from debrief_agent.core.database import get_db
 from debrief_agent.models.analysis import Analysis
 from debrief_agent.models.call import Call
 from debrief_agent.schemas.call import CallResponse
-from debrief_agent.services.analysis import generate_call_analysis
-from debrief_agent.services.extraction import extract_call_metadata
+from debrief_agent.services.analysis import CallAnalyzer
+from debrief_agent.services.extraction import MetadataExtractor
 
 router = APIRouter()
+metadata_extractor = MetadataExtractor()
+call_analyzer = CallAnalyzer()
 
 
 @router.post(
@@ -64,7 +66,7 @@ async def upload_transcript(
 
     # --- Run LLM metadata extraction pass ---
     # Raises HTTPException(502) on failure, which causes get_db to roll back
-    metadata = await extract_call_metadata(transcript_text)
+    metadata = await metadata_extractor.extract(transcript_text)
 
     # --- Write extracted metadata back to the call row ---
     call.rep_name = metadata["rep_name"]
@@ -75,7 +77,7 @@ async def upload_transcript(
     # --- Run LLM analysis pass ---
     # Uses the extracted metadata to personalise the debrief prompt.
     # Raises HTTPException(502) on failure, which causes get_db to roll back.
-    analysis_data = await generate_call_analysis(transcript_text, metadata)
+    analysis_data = await call_analyzer.analyze(transcript_text, metadata)
 
     # --- Create Analysis ORM object and link it to the call ---
     analysis = Analysis(
