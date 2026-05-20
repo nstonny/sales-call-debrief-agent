@@ -10,6 +10,7 @@ Usage:
 Behavior:
 - Runs exactly one analysis per command invocation.
 - If multiple rubrics are provided, all are injected together in one prompt.
+- `--no-rubrics` disables rubric injection for that run.
 
 Outputs:
 - Prints a compact per-run summary to stdout.
@@ -41,7 +42,9 @@ async def main() -> None:
         required=True,
         help="Path to a single transcript .txt file.",
     )
-    parser.add_argument(
+
+    rubric_group = parser.add_mutually_exclusive_group()
+    rubric_group.add_argument(
         "--rubrics",
         type=str,
         default=None,
@@ -50,6 +53,12 @@ async def main() -> None:
             "Defaults to DEFAULT_ANALYSIS_RUBRICS from config."
         ),
     )
+    rubric_group.add_argument(
+        "--no-rubrics",
+        action="store_true",
+        help="Disable rubric injection for this run.",
+    )
+
     parser.add_argument(
         "--out",
         type=Path,
@@ -58,8 +67,10 @@ async def main() -> None:
     )
     args = parser.parse_args()
 
+    selected_rubrics = [] if args.no_rubrics else _parse_rubrics(args.rubrics)
+
     runner = ExperimentRunner(
-        rubrics=_parse_rubrics(args.rubrics),
+        rubrics=selected_rubrics,
         transcript_path=str(args.transcript),
         out_path=str(args.out),
     )

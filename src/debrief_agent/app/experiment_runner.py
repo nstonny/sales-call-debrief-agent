@@ -26,8 +26,8 @@ class ExperimentRunner:
 
     @staticmethod
     def _resolve_rubrics(raw: list[str] | None) -> list[str]:
-        if not raw:
-            return DEFAULT_ANALYSIS_RUBRICS
+        if raw is None:
+            return list(DEFAULT_ANALYSIS_RUBRICS)
         return [item.strip() for item in raw if item.strip()]
 
     def resolve_transcript(self) -> Path:
@@ -69,8 +69,9 @@ class ExperimentRunner:
         with self.out_path.open("w", encoding="utf-8") as fh:
             fh.write(json.dumps(row, ensure_ascii=False) + "\n")
 
+        rubrics_display = ",".join(row["rubrics"]) if row["rubrics"] else "none"
         print(
-            f"[{row['transcript_name']}] rubrics={','.join(row['rubrics'])} "
+            f"[{row['transcript_name']}] rubrics={rubrics_display} "
             f"score={row['score']} sentiment={row['sentiment']}"
         )
 

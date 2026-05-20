@@ -216,6 +216,17 @@ uv run python -m debrief_agent.app.run_rubric_experiments \
   --out "experiments/transcript_6_overpitching.jsonl"
 ```
 
+### Single bundled transcript + no rubrics
+
+Use `--no-rubrics` to bypass rubric injection for that run.
+
+```zsh
+uv run python -m debrief_agent.app.run_rubric_experiments \
+  --transcript "src/data/transcripts/transcript_6.txt" \
+  --no-rubrics \
+  --out "experiments/transcript_6_no_rubrics.jsonl"
+```
+
 ### Single bundled transcript + all rubrics
 
 ```zsh

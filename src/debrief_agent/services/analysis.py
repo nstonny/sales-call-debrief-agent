@@ -82,6 +82,7 @@ class CallAnalyzer:
                 model="gpt-5-mini",
                 instructions=system_prompt,
                 input=build_analysis_user_message(transcript, metadata),
+                reasoning={"effort": "medium"},
                 text=cast(Any, {"format": {"type": "json_object"}}),  # guarantees valid JSON output
             )
         except OpenAIError as exc:
