@@ -1,11 +1,3 @@
-SALES CALL TRANSCRIPT 6
-========================
-Industry: SaaS / CRM Software
-Duration: 27 minutes
-Rep: Brad Holloway
-Prospect: Diane Moreau, Sales Director, Fenwick Distribution (320 employees)
-========================
-
 Brad: Diane! Great to finally connect. I've been looking forward to this one. So, I want to kick things off by showing you what we've built because I think once you see it, you're going to be blown away. We've got a really exciting product and I think it's going to be a perfect fit for you.
 
 Diane: Sure, okay.

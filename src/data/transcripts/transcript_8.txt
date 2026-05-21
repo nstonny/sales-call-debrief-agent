@@ -1,11 +1,3 @@
-SALES CALL TRANSCRIPT 10
-========================
-Industry: HR Consulting / Outsourced HR Services
-Duration: 24 minutes
-Rep: Natalie Cross
-Prospect: Paul Drummond, Managing Director, Drummond Recruitment Ltd (55 employees)
-========================
-
 Natalie: Hi Paul, thanks for jumping on. So I know you're probably dealing with all the usual HR headaches — compliance, retention, that kind of thing. That's usually why people come to us. Is that what's going on for you?
 
 Paul: Uh, sort of, yeah.
