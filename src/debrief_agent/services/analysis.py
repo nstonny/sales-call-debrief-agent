@@ -37,7 +37,8 @@ import logging
 from typing import Any, cast
 
 from fastapi import HTTPException
-from openai import AsyncOpenAI, OpenAIError
+from langfuse.openai import AsyncOpenAI
+from openai import OpenAIError
 from pydantic import ValidationError
 
 from debrief_agent.core.config import DEFAULT_ANALYSIS_RUBRICS, OPENAI_API_KEY
