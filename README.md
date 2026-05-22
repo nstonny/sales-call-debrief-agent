@@ -9,6 +9,7 @@ LLM-powered pipeline for analyzing sales call transcripts and producing structur
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Alembic](https://img.shields.io/badge/Alembic-Migrations-4B5563)](https://alembic.sqlalchemy.org/)
 [![OpenAI](https://img.shields.io/badge/OpenAI-Responses_API-412991?logo=openai&logoColor=white)](https://platform.openai.com/docs/api-reference/responses)
+[![Langfuse](https://img.shields.io/badge/Langfuse-Observability-0EA5E9)](https://langfuse.com/)
 [![uv](https://img.shields.io/badge/uv-Package_Manager-111827)](https://docs.astral.sh/uv/)
 
 This project includes:
@@ -42,6 +43,7 @@ This project includes:
 - PostgreSQL
 - Alembic
 - OpenAI Responses API
+- Langfuse (observability/tracing)
 - uv
 - Jupyter (dev dependency)
 
