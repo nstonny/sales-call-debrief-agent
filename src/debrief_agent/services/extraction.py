@@ -16,17 +16,26 @@ Behaviour on failure:
   - If the LLM returns a refusal → raises HTTPException 502.
   - If the response cannot be parsed / validated by Pydantic → raises HTTPException 502.
   In all failure cases the caller (upload route) will roll back the transaction.
+
+Langfuse metadata (current span):
+- service: "extraction"
+- model: "gpt-4.1-mini"
+- had_refusal: bool
+- validation_ok: bool
+- error_type: "none" | "openai_error" | "llm_refusal" | "validation_error"
 """
 
 import logging
 from typing import Any, cast
 
 from fastapi import HTTPException
+from langfuse import observe
 from langfuse.openai import AsyncOpenAI
 from openai import OpenAIError
 from pydantic import ValidationError
 
 from debrief_agent.core.config import OPENAI_API_KEY
+from debrief_agent.core.observability import update_current_span_metadata
 from debrief_agent.prompts.extraction import (
     EXTRACTION_SYSTEM_PROMPT,
     build_extraction_user_message,
@@ -45,8 +54,21 @@ class MetadataExtractor:
     def __init__(self, client: AsyncOpenAI | None = None) -> None:
         self._client = client or _client
 
-    async def extract(self, transcript: str) -> dict:
+    @observe(name="metadata.extract", as_type="span", capture_input=False, capture_output=False)
+    async def extract(self, transcript: str, transcript_source: str = "upload_api") -> dict:
         """Return rep/contact/deal-stage metadata parsed and validated with Pydantic."""
+        # Keep arg for backward compatibility with callers that pass transcript_source.
+        _ = transcript_source
+
+        trace_metadata: dict[str, Any] = {
+            "service": "extraction",
+            "model": "gpt-4.1-mini",
+            "had_refusal": False,
+            "validation_ok": False,
+            "error_type": "none",
+        }
+        update_current_span_metadata(trace_metadata)
+
         # --- Call the LLM via Responses API ---
         try:
             response = await self._client.responses.create(
@@ -57,6 +79,8 @@ class MetadataExtractor:
                 text=cast(Any, {"format": {"type": "json_object"}}),  # guarantees valid JSON output
             )
         except OpenAIError as exc:
+            trace_metadata["error_type"] = "openai_error"
+            update_current_span_metadata(trace_metadata)
             logger.error("OpenAI API call failed during metadata extraction: %s", exc)
             raise HTTPException(
                 status_code=502,
@@ -77,6 +101,9 @@ class MetadataExtractor:
         )
 
         if refusal_part:
+            trace_metadata["had_refusal"] = True
+            trace_metadata["error_type"] = "llm_refusal"
+            update_current_span_metadata(trace_metadata)
             refusal_text = getattr(refusal_part, "refusal", "No reason given.")
             logger.warning("LLM refused metadata extraction request. Reason: %s", refusal_text)
             raise HTTPException(
@@ -92,6 +119,9 @@ class MetadataExtractor:
         try:
             metadata = CallMetadataExtraction.model_validate_json(raw_content)
         except ValidationError as exc:
+            trace_metadata["validation_ok"] = False
+            trace_metadata["error_type"] = "validation_error"
+            update_current_span_metadata(trace_metadata)
             logger.error(
                 "LLM response failed Pydantic validation. Raw content: %r — Errors: %s",
                 raw_content,
@@ -102,13 +132,14 @@ class MetadataExtractor:
                 detail="LLM extraction failed — response did not match expected schema.",
             )
 
+        trace_metadata["validation_ok"] = True
+        update_current_span_metadata(trace_metadata)
         return metadata.model_dump()
 
 
 _default_metadata_extractor = MetadataExtractor()
 
 
-async def extract_call_metadata(transcript: str) -> dict:
+async def extract_call_metadata(transcript: str, transcript_source: str = "upload_api") -> dict:
     """Compatibility wrapper for legacy callers; new code should use MetadataExtractor."""
-    return await _default_metadata_extractor.extract(transcript)
-
+    return await _default_metadata_extractor.extract(transcript, transcript_source=transcript_source)

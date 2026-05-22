@@ -194,6 +194,25 @@ metadata = await extract_call_metadata(transcript_text)
 analysis = await generate_call_analysis(transcript_text, metadata)
 ```
 
+### Langfuse metadata taxonomy
+
+When Langfuse tracing is enabled, the service spans include bounded metadata fields that can be used for filtering in the Langfuse UI.
+
+Common fields:
+- `service`: `extraction` or `analysis`
+- `model`: `gpt-4.1-mini` (extraction) or `gpt-5-mini` (analysis)
+- `had_refusal`: `true`/`false`
+- `validation_ok`: `true`/`false`
+- `error_type`: failure taxonomy value
+
+`error_type` values by service:
+- Extraction (`src/debrief_agent/services/extraction.py`):
+  - `none`, `openai_error`, `llm_refusal`, `validation_error`
+- Analysis (`src/debrief_agent/services/analysis.py`):
+  - `none`, `rubric_error`, `openai_error`, `llm_refusal`, `validation_error`
+
+`rubric_error` is analysis-only and indicates rubric file resolution failed before the LLM call.
+
 ## Experiments CLI (Rubric Testing)
 
 CLI module: `src/debrief_agent/app/run_rubric_experiments.py`
@@ -316,3 +335,5 @@ From `src/debrief_agent/core/config.py`:
     ```zsh
     uv --version
     ```
+
+

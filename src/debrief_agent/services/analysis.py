@@ -31,17 +31,26 @@ Failure behavior:
 - LLM refusal -> HTTPException 502
 - Invalid schema -> HTTPException 502
 - Invalid/missing rubric file -> HTTPException 422
+
+Langfuse metadata (current span):
+- service: "analysis"
+- model: "gpt-5-mini"
+- had_refusal: bool
+- validation_ok: bool
+- error_type: "none" | "rubric_error" | "openai_error" | "llm_refusal" | "validation_error"
 """
 
 import logging
 from typing import Any, cast
 
 from fastapi import HTTPException
+from langfuse import observe
 from langfuse.openai import AsyncOpenAI
 from openai import OpenAIError
 from pydantic import ValidationError
 
 from debrief_agent.core.config import DEFAULT_ANALYSIS_RUBRICS, OPENAI_API_KEY
+from debrief_agent.core.observability import update_current_span_metadata
 from debrief_agent.prompts.analysis import (
     build_analysis_system_prompt,
     build_analysis_user_message,
@@ -61,6 +70,7 @@ class CallAnalyzer:
     def __init__(self, client: AsyncOpenAI | None = None) -> None:
         self._client = client or _client
 
+    @observe(name="analysis.generate", as_type="span", capture_input=False, capture_output=False)
     async def analyze(
         self,
         transcript: str,
@@ -68,11 +78,22 @@ class CallAnalyzer:
         rubric_names: list[str] | None = None,
     ) -> dict:
         """Generate one validated analysis object from transcript, metadata, and rubrics."""
+        trace_metadata: dict[str, Any] = {
+            "service": "analysis",
+            "model": "gpt-5-mini",
+            "had_refusal": False,
+            "validation_ok": False,
+            "error_type": "none",
+        }
+        update_current_span_metadata(trace_metadata)
+
         # Resolve rubric set: caller override or backend default.
         effective_rubrics = rubric_names if rubric_names is not None else DEFAULT_ANALYSIS_RUBRICS
         try:
             rubric_text = load_rubric_text(effective_rubrics)
         except (FileNotFoundError, ValueError) as exc:
+            trace_metadata["error_type"] = "rubric_error"
+            update_current_span_metadata(trace_metadata)
             raise HTTPException(status_code=422, detail=str(exc))
 
         system_prompt = build_analysis_system_prompt(rubric_text or None)
@@ -83,10 +104,12 @@ class CallAnalyzer:
                 model="gpt-5-mini",
                 instructions=system_prompt,
                 input=build_analysis_user_message(transcript, metadata),
-                reasoning={"effort": "medium"},
+                reasoning=cast(Any, {"effort": "medium"}),
                 text=cast(Any, {"format": {"type": "json_object"}}),  # guarantees valid JSON output
             )
         except OpenAIError as exc:
+            trace_metadata["error_type"] = "openai_error"
+            update_current_span_metadata(trace_metadata)
             logger.error("OpenAI API call failed during analysis generation: %s", exc)
             raise HTTPException(
                 status_code=502,
@@ -107,6 +130,9 @@ class CallAnalyzer:
         )
 
         if refusal_part:
+            trace_metadata["had_refusal"] = True
+            trace_metadata["error_type"] = "llm_refusal"
+            update_current_span_metadata(trace_metadata)
             refusal_text = getattr(refusal_part, "refusal", "No reason given.")
             logger.warning(
                 "LLM refused analysis generation request. Reason: %s",
@@ -125,6 +151,9 @@ class CallAnalyzer:
         try:
             result = AnalysisResult.model_validate_json(raw_content)
         except ValidationError as exc:
+            trace_metadata["validation_ok"] = False
+            trace_metadata["error_type"] = "validation_error"
+            update_current_span_metadata(trace_metadata)
             logger.error(
                 "LLM analysis response failed Pydantic validation. Raw content: %r — Errors: %s",
                 raw_content,
@@ -135,6 +164,8 @@ class CallAnalyzer:
                 detail="LLM analysis failed — response did not match expected schema.",
             )
 
+        trace_metadata["validation_ok"] = True
+        update_current_span_metadata(trace_metadata)
         return result.model_dump()
 
 
@@ -152,4 +183,3 @@ async def generate_call_analysis(
         metadata=metadata,
         rubric_names=rubric_names,
     )
-
