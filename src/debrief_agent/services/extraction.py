@@ -55,10 +55,8 @@ class MetadataExtractor:
         self._client = client or _client
 
     @observe(name="metadata.extract", as_type="span", capture_input=False, capture_output=False)
-    async def extract(self, transcript: str, transcript_source: str = "upload_api") -> dict:
+    async def extract(self, transcript: str) -> dict:
         """Return rep/contact/deal-stage metadata parsed and validated with Pydantic."""
-        # Keep arg for backward compatibility with callers that pass transcript_source.
-        _ = transcript_source
 
         trace_metadata: dict[str, Any] = {
             "service": "extraction",
@@ -140,6 +138,6 @@ class MetadataExtractor:
 _default_metadata_extractor = MetadataExtractor()
 
 
-async def extract_call_metadata(transcript: str, transcript_source: str = "upload_api") -> dict:
+async def extract_call_metadata(transcript: str) -> dict:
     """Compatibility wrapper for legacy callers; new code should use MetadataExtractor."""
-    return await _default_metadata_extractor.extract(transcript, transcript_source=transcript_source)
+    return await _default_metadata_extractor.extract(transcript)
