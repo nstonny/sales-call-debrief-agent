@@ -44,13 +44,12 @@ import logging
 from typing import Any, cast
 
 from fastapi import HTTPException
-from langfuse import observe
 from langfuse.openai import AsyncOpenAI
 from openai import OpenAIError
 from pydantic import ValidationError
 
 from debrief_agent.core.config import DEFAULT_ANALYSIS_RUBRICS, OPENAI_API_KEY
-from debrief_agent.core.observability import update_current_span_metadata
+from debrief_agent.core.observability import observe, update_current_span_metadata
 from debrief_agent.prompts.analysis import (
     build_analysis_system_prompt,
     build_analysis_user_message,

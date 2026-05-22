@@ -1,7 +1,7 @@
 import logging
 from typing import Any
 
-from langfuse import get_client
+from langfuse import get_client, observe
 
 logger = logging.getLogger(__name__)
 
@@ -16,3 +16,5 @@ def update_current_span_metadata(metadata: dict[str, Any]) -> None:
     except Exception:
         logger.debug("Could not update Langfuse span metadata", exc_info=True)
 
+
+__all__ = ["observe", "update_current_span_metadata"]

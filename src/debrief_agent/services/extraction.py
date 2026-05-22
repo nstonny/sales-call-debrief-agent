@@ -29,13 +29,12 @@ import logging
 from typing import Any, cast
 
 from fastapi import HTTPException
-from langfuse import observe
 from langfuse.openai import AsyncOpenAI
 from openai import OpenAIError
 from pydantic import ValidationError
 
 from debrief_agent.core.config import OPENAI_API_KEY
-from debrief_agent.core.observability import update_current_span_metadata
+from debrief_agent.core.observability import observe, update_current_span_metadata
 from debrief_agent.prompts.extraction import (
     EXTRACTION_SYSTEM_PROMPT,
     build_extraction_user_message,
