@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from debrief_agent.core.database import get_db
+from debrief_agent.core.observability import set_current_trace_session
 from debrief_agent.models.analysis import Analysis
 from debrief_agent.models.call import Call
 from debrief_agent.schemas.call import CallResponse
@@ -23,15 +24,17 @@ call_analyzer = CallAnalyzer()
         "Accepts a .txt transcript file plus optional company name and deal value. "
         "Saves the transcript to the calls table, runs the LLM metadata extraction "
         "pass to populate rep_name, contact_name, contact_title and deal_stage, "
+        "uses persisted call.id as tracing session_id, "
         "then returns the fully populated record."
     ),
 )
 async def upload_transcript(
     file: UploadFile = File(..., description="Plain-text transcript file (.txt)"),
     company: Optional[str] = Form(None, description="Company name (optional)"),
-    deal_value: Optional[float] = Form(None, description="Estimated deal value in € (optional)"),
+    deal_value: Optional[float] = Form(None, description="Estimated deal value in EUR (optional)"),
     db: AsyncSession = Depends(get_db),
 ) -> CallResponse:
+    """Upload transcript, persist call/analysis, and correlate LLM traces by call ID."""
     # --- Validate file type ---
     if not file.filename.endswith(".txt"):
         raise HTTPException(
@@ -64,9 +67,13 @@ async def upload_transcript(
     await db.flush()        # assigns UUID and triggers server_default for created_at
     await db.refresh(call)  # load server-generated values back into the Python object
 
+    # Reuse persisted call ID as the canonical tracing session identifier.
+    session_id = str(call.id)
+    set_current_trace_session(session_id)
+
     # --- Run LLM metadata extraction pass ---
     # Raises HTTPException(502) on failure, which causes get_db to roll back
-    metadata = await metadata_extractor.extract(transcript_text)
+    metadata = await metadata_extractor.extract(transcript_text, session_id=session_id)
 
     # --- Write extracted metadata back to the call row ---
     call.rep_name = metadata["rep_name"]
@@ -77,7 +84,7 @@ async def upload_transcript(
     # --- Run LLM analysis pass ---
     # Uses the extracted metadata to personalise the debrief prompt.
     # Raises HTTPException(502) on failure, which causes get_db to roll back.
-    analysis_data = await call_analyzer.analyze(transcript_text, metadata)
+    analysis_data = await call_analyzer.analyze(transcript_text, metadata, session_id=session_id)
 
     # --- Create Analysis ORM object and link it to the call ---
     analysis = Analysis(

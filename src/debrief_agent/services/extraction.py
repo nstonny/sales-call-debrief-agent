@@ -20,6 +20,7 @@ Behaviour on failure:
 Langfuse metadata (current span):
 - service: "extraction"
 - model: "gpt-4.1-mini"
+- session_id: str | None (`call.id` in upload flow; unset in some non-API flows)
 - had_refusal: bool
 - validation_ok: bool
 - error_type: "none" | "openai_error" | "llm_refusal" | "validation_error"
@@ -54,12 +55,16 @@ class MetadataExtractor:
         self._client = client or _client
 
     @observe(name="metadata.extract", as_type="span", capture_input=False, capture_output=False)
-    async def extract(self, transcript: str) -> dict:
-        """Return rep/contact/deal-stage metadata parsed and validated with Pydantic."""
+    async def extract(self, transcript: str, session_id: str | None = None) -> dict:
+        """Return rep/contact/deal-stage metadata parsed and validated with Pydantic.
+
+        `session_id` is optional and is used only for tracing correlation.
+        """
 
         trace_metadata: dict[str, Any] = {
             "service": "extraction",
             "model": "gpt-4.1-mini",
+            "session_id": session_id,
             "had_refusal": False,
             "validation_ok": False,
             "error_type": "none",
@@ -137,6 +142,9 @@ class MetadataExtractor:
 _default_metadata_extractor = MetadataExtractor()
 
 
-async def extract_call_metadata(transcript: str) -> dict:
-    """Compatibility wrapper for legacy callers; new code should use MetadataExtractor."""
-    return await _default_metadata_extractor.extract(transcript)
+async def extract_call_metadata(transcript: str, session_id: str | None = None) -> dict:
+    """Compatibility wrapper for legacy callers; new code should use MetadataExtractor.
+
+    `session_id` is optional and forwarded to tracing metadata when provided.
+    """
+    return await _default_metadata_extractor.extract(transcript, session_id=session_id)

@@ -203,6 +203,7 @@ When Langfuse tracing is enabled, the service spans include bounded metadata fie
 Common fields:
 - `service`: `extraction` or `analysis`
 - `model`: `gpt-4.1-mini` (extraction) or `gpt-5-mini` (analysis)
+- `session_id`: upload flow uses persisted `call.id` for cross-span correlation
 - `had_refusal`: `true`/`false`
 - `validation_ok`: `true`/`false`
 - `error_type`: failure taxonomy value
@@ -337,5 +338,3 @@ From `src/debrief_agent/core/config.py`:
     ```zsh
     uv --version
     ```
-
-

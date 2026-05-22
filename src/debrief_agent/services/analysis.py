@@ -35,6 +35,7 @@ Failure behavior:
 Langfuse metadata (current span):
 - service: "analysis"
 - model: "gpt-5-mini"
+- session_id: str | None (`call.id` in upload flow; unset in some non-API flows)
 - had_refusal: bool
 - validation_ok: bool
 - error_type: "none" | "rubric_error" | "openai_error" | "llm_refusal" | "validation_error"
@@ -75,11 +76,16 @@ class CallAnalyzer:
         transcript: str,
         metadata: dict,
         rubric_names: list[str] | None = None,
+        session_id: str | None = None,
     ) -> dict:
-        """Generate one validated analysis object from transcript, metadata, and rubrics."""
+        """Generate one validated analysis object from transcript, metadata, and rubrics.
+
+        `session_id` is optional and is used only for tracing correlation.
+        """
         trace_metadata: dict[str, Any] = {
             "service": "analysis",
             "model": "gpt-5-mini",
+            "session_id": session_id,
             "had_refusal": False,
             "validation_ok": False,
             "error_type": "none",
@@ -175,10 +181,15 @@ async def generate_call_analysis(
     transcript: str,
     metadata: dict,
     rubric_names: list[str] | None = None,
+    session_id: str | None = None,
 ) -> dict:
-    """Compatibility wrapper for legacy callers; new code should use CallAnalyzer."""
+    """Compatibility wrapper for legacy callers; new code should use CallAnalyzer.
+
+    `session_id` is optional and forwarded to tracing metadata when provided.
+    """
     return await _default_call_analyzer.analyze(
         transcript=transcript,
         metadata=metadata,
         rubric_names=rubric_names,
+        session_id=session_id,
     )
