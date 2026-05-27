@@ -35,6 +35,7 @@ Failure behavior:
 Langfuse metadata (current span):
 - service: "analysis"
 - model: "gpt-5-mini"
+- trace_id: str | None
 - session_id: str | None (`call.id` in upload flow; unset in some non-API flows)
 - had_refusal: bool
 - validation_ok: bool
@@ -50,7 +51,11 @@ from openai import OpenAIError
 from pydantic import ValidationError
 
 from debrief_agent.core.config import DEFAULT_ANALYSIS_RUBRICS, OPENAI_API_KEY
-from debrief_agent.core.observability import observe, update_current_span_metadata
+from debrief_agent.core.observability import (
+    get_current_trace_id,
+    observe,
+    update_current_span_metadata,
+)
 from debrief_agent.prompts.analysis import (
     build_analysis_system_prompt,
     build_analysis_user_message,
@@ -82,9 +87,11 @@ class CallAnalyzer:
 
         `session_id` is optional and is used only for tracing correlation.
         """
+        trace_id = get_current_trace_id()
         trace_metadata: dict[str, Any] = {
             "service": "analysis",
             "model": "gpt-5-mini",
+            "trace_id": trace_id,
             "session_id": session_id,
             "had_refusal": False,
             "validation_ok": False,
@@ -115,7 +122,11 @@ class CallAnalyzer:
         except OpenAIError as exc:
             trace_metadata["error_type"] = "openai_error"
             update_current_span_metadata(trace_metadata)
-            logger.error("OpenAI API call failed during analysis generation: %s", exc)
+            logger.error(
+                "OpenAI API call failed during analysis generation (trace_id=%s): %s",
+                trace_id,
+                exc,
+            )
             raise HTTPException(
                 status_code=502,
                 detail=f"LLM analysis failed — OpenAI API error: {exc}",
@@ -140,7 +151,8 @@ class CallAnalyzer:
             update_current_span_metadata(trace_metadata)
             refusal_text = getattr(refusal_part, "refusal", "No reason given.")
             logger.warning(
-                "LLM refused analysis generation request. Reason: %s",
+                "LLM refused analysis generation request (trace_id=%s). Reason: %s",
+                trace_id,
                 refusal_text,
             )
             raise HTTPException(
@@ -160,7 +172,8 @@ class CallAnalyzer:
             trace_metadata["error_type"] = "validation_error"
             update_current_span_metadata(trace_metadata)
             logger.error(
-                "LLM analysis response failed Pydantic validation. Raw content: %r — Errors: %s",
+                "LLM analysis response failed Pydantic validation (trace_id=%s). Raw content: %r — Errors: %s",
+                trace_id,
                 raw_content,
                 exc,
             )

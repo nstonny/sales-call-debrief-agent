@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from debrief_agent.core.database import get_db
-from debrief_agent.core.observability import set_current_trace_session
+from debrief_agent.core.observability import propagate_trace_session
 from debrief_agent.models.analysis import Analysis
 from debrief_agent.models.call import Call
 from debrief_agent.schemas.call import CallResponse
@@ -69,22 +69,21 @@ async def upload_transcript(
 
     # Reuse persisted call ID as the canonical tracing session identifier.
     session_id = str(call.id)
-    set_current_trace_session(session_id)
 
-    # --- Run LLM metadata extraction pass ---
-    # Raises HTTPException(502) on failure, which causes get_db to roll back
-    metadata = await metadata_extractor.extract(transcript_text, session_id=session_id)
+    # --- Run LLM extraction + analysis with shared tracing session context ---
+    with propagate_trace_session(session_id=session_id, trace_name="api.upload_transcript"):
+        # Raises HTTPException(502) on failure, which causes get_db to roll back
+        metadata = await metadata_extractor.extract(transcript_text, session_id=session_id)
 
-    # --- Write extracted metadata back to the call row ---
-    call.rep_name = metadata["rep_name"]
-    call.contact_name = metadata["contact_name"]
-    call.contact_title = metadata["contact_title"]
-    call.deal_stage = metadata["deal_stage"]
+        # --- Write extracted metadata back to the call row ---
+        call.rep_name = metadata["rep_name"]
+        call.contact_name = metadata["contact_name"]
+        call.contact_title = metadata["contact_title"]
+        call.deal_stage = metadata["deal_stage"]
 
-    # --- Run LLM analysis pass ---
-    # Uses the extracted metadata to personalise the debrief prompt.
-    # Raises HTTPException(502) on failure, which causes get_db to roll back.
-    analysis_data = await call_analyzer.analyze(transcript_text, metadata, session_id=session_id)
+        # Uses the extracted metadata to personalise the debrief prompt.
+        # Raises HTTPException(502) on failure, which causes get_db to roll back.
+        analysis_data = await call_analyzer.analyze(transcript_text, metadata, session_id=session_id)
 
     # --- Create Analysis ORM object and link it to the call ---
     analysis = Analysis(

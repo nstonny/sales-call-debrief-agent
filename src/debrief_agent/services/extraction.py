@@ -20,6 +20,7 @@ Behaviour on failure:
 Langfuse metadata (current span):
 - service: "extraction"
 - model: "gpt-4.1-mini"
+- trace_id: str | None
 - session_id: str | None (`call.id` in upload flow; unset in some non-API flows)
 - had_refusal: bool
 - validation_ok: bool
@@ -35,7 +36,11 @@ from openai import OpenAIError
 from pydantic import ValidationError
 
 from debrief_agent.core.config import OPENAI_API_KEY
-from debrief_agent.core.observability import observe, update_current_span_metadata
+from debrief_agent.core.observability import (
+    get_current_trace_id,
+    observe,
+    update_current_span_metadata,
+)
 from debrief_agent.prompts.extraction import (
     EXTRACTION_SYSTEM_PROMPT,
     build_extraction_user_message,
@@ -61,9 +66,11 @@ class MetadataExtractor:
         `session_id` is optional and is used only for tracing correlation.
         """
 
+        trace_id = get_current_trace_id()
         trace_metadata: dict[str, Any] = {
             "service": "extraction",
             "model": "gpt-4.1-mini",
+            "trace_id": trace_id,
             "session_id": session_id,
             "had_refusal": False,
             "validation_ok": False,
@@ -83,7 +90,11 @@ class MetadataExtractor:
         except OpenAIError as exc:
             trace_metadata["error_type"] = "openai_error"
             update_current_span_metadata(trace_metadata)
-            logger.error("OpenAI API call failed during metadata extraction: %s", exc)
+            logger.error(
+                "OpenAI API call failed during metadata extraction (trace_id=%s): %s",
+                trace_id,
+                exc,
+            )
             raise HTTPException(
                 status_code=502,
                 detail=f"LLM extraction failed — OpenAI API error: {exc}",
@@ -107,7 +118,11 @@ class MetadataExtractor:
             trace_metadata["error_type"] = "llm_refusal"
             update_current_span_metadata(trace_metadata)
             refusal_text = getattr(refusal_part, "refusal", "No reason given.")
-            logger.warning("LLM refused metadata extraction request. Reason: %s", refusal_text)
+            logger.warning(
+                "LLM refused metadata extraction request (trace_id=%s). Reason: %s",
+                trace_id,
+                refusal_text,
+            )
             raise HTTPException(
                 status_code=502,
                 detail=f"LLM refused to process the transcript: {refusal_text}",
@@ -125,7 +140,8 @@ class MetadataExtractor:
             trace_metadata["error_type"] = "validation_error"
             update_current_span_metadata(trace_metadata)
             logger.error(
-                "LLM response failed Pydantic validation. Raw content: %r — Errors: %s",
+                "LLM response failed Pydantic validation (trace_id=%s). Raw content: %r — Errors: %s",
+                trace_id,
                 raw_content,
                 exc,
             )

@@ -4,10 +4,11 @@ This module centralizes Langfuse helpers so service files avoid duplicated
 best-effort tracing logic.
 """
 
+from contextlib import contextmanager
 import logging
-from typing import Any
+from typing import Any, Iterator
 
-from langfuse import get_client, observe
+from langfuse import get_client, observe, propagate_attributes
 
 logger = logging.getLogger(__name__)
 
@@ -23,18 +24,47 @@ def update_current_span_metadata(metadata: dict[str, Any]) -> None:
         logger.debug("Could not update Langfuse span metadata", exc_info=True)
 
 
-def set_current_trace_session(session_id: str | None) -> None:
-    """Attach session_id to the current trace-level input for cross-span correlation.
+def get_current_trace_id() -> str | None:
+    """Return the current Langfuse trace id, if available.
+
+    This is best-effort only; tracing failures must never affect request handling.
+    """
+    try:
+        trace_id = get_client().get_current_trace_id()
+    except Exception:
+        logger.debug("Could not read Langfuse trace id", exc_info=True)
+        return None
+
+    return str(trace_id) if trace_id else None
+
+
+@contextmanager
+def propagate_trace_session(session_id: str | None, trace_name: str | None = None,) -> Iterator[None]:
+    """Context manager that propagates trace-level attributes for session correlation.
+
+    Uses Langfuse `propagate_attributes(session_id=...)` so child spans inherit
+    the trace session identifier.
 
     This is best-effort only; tracing failures must never affect request handling.
     """
     if not session_id:
+        yield
         return
 
     try:
-        get_client().set_current_trace_io(input={"session_id": session_id})
+        propagation_ctx = propagate_attributes(session_id=session_id, trace_name=trace_name,)
     except Exception:
-        logger.debug("Could not set Langfuse trace session_id", exc_info=True)
+        logger.debug("Could not initialize Langfuse session propagation", exc_info=True)
+        yield
+        return
+
+    with propagation_ctx:
+        yield
 
 
-__all__ = ["observe", "update_current_span_metadata", "set_current_trace_session"]
+__all__ = [
+    "observe",
+    "update_current_span_metadata",
+    "get_current_trace_id",
+    "propagate_trace_session",
+]
