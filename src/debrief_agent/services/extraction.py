@@ -4,17 +4,16 @@ services/extraction.py
 Runs the LLM metadata extraction pass on a raw transcript.
 Extracts: rep_name, contact_name, contact_title, deal_stage.
 
-Uses the OpenAI Responses API (client.responses.create).
-Uses Pydantic (CallMetadataExtraction) for JSON parsing, validation, and normalisation.
+Uses the OpenAI Responses API structured parser (`client.responses.parse`).
+Uses Pydantic (`CallMetadataExtraction`) directly as the response format model.
 
 Primary API:
-  - `MetadataExtractor.extract(...)` is the preferred class-based entrypoint.
-  - `extract_call_metadata(...)` is kept as a compatibility wrapper for older callers.
+  - `MetadataExtractor.extract(...)` is the class-based entrypoint.
 
 Behaviour on failure:
-  - If the OpenAI call fails (network error, API error, rate limit) → raises HTTPException 502.
-  - If the LLM returns a refusal → raises HTTPException 502.
-  - If the response cannot be parsed / validated by Pydantic → raises HTTPException 502.
+  - If the OpenAI call fails (network error, API error, rate limit) -> raises HTTPException 502.
+  - If the LLM returns a refusal -> raises HTTPException 502.
+  - If the response cannot be parsed / validated by Pydantic -> raises HTTPException 502.
   In all failure cases the caller (upload route) will roll back the transaction.
 
 Langfuse metadata (current span):
@@ -78,14 +77,14 @@ class MetadataExtractor:
         }
         update_current_span_metadata(trace_metadata)
 
-        # --- Call the LLM via Responses API ---
+        # --- Call the LLM via Responses API with structured Pydantic parsing ---
         try:
-            response = await self._client.responses.create(
-                model="gpt-4.1-mini",          # fast and cheap — ideal for structured extraction
+            response = await cast(Any, self._client.responses).parse(
+                model="gpt-4.1-mini",  # fast and cheap — ideal for structured extraction
                 instructions=EXTRACTION_SYSTEM_PROMPT,
                 input=build_extraction_user_message(transcript),
-                temperature=0,                # deterministic — extraction should not be creative
-                text=cast(Any, {"format": {"type": "json_object"}}),  # guarantees valid JSON output
+                temperature=0,  # deterministic — extraction should not be creative
+                text_format=CallMetadataExtraction,
             )
         except OpenAIError as exc:
             trace_metadata["error_type"] = "openai_error"
@@ -128,21 +127,36 @@ class MetadataExtractor:
                 detail=f"LLM refused to process the transcript: {refusal_text}",
             )
 
-        # --- Parse + validate + normalise via Pydantic ---
-        # model_validate_json handles JSON parsing, key validation, and empty-string -> None
-        # normalisation in one step via CallMetadataExtraction.
-        raw_content = response.output_text or ""
-
+        # --- Read parsed model and validate fallback payloads when needed ---
         try:
-            metadata = CallMetadataExtraction.model_validate_json(raw_content)
-        except ValidationError as exc:
+            parsed_payload = getattr(response, "output_parsed", None)
+            if parsed_payload is None:
+                parsed_payload = next(
+                    (
+                        getattr(content_part, "parsed", None)
+                        for item in (response.output or [])
+                        for content_part in (getattr(item, "content", None) or [])
+                        if getattr(content_part, "type", None) in {"output_text", "text"}
+                    ),
+                    None,
+                )
+
+            if parsed_payload is None:
+                raise ValueError("No parsed payload returned by Responses API")
+
+            metadata = (
+                parsed_payload
+                if isinstance(parsed_payload, CallMetadataExtraction)
+                else CallMetadataExtraction.model_validate(parsed_payload)
+            )
+        except (ValidationError, ValueError, TypeError) as exc:
             trace_metadata["validation_ok"] = False
             trace_metadata["error_type"] = "validation_error"
             update_current_span_metadata(trace_metadata)
             logger.error(
-                "LLM response failed Pydantic validation (trace_id=%s). Raw content: %r — Errors: %s",
+                "LLM response failed Pydantic validation (trace_id=%s). Parsed payload: %r — Errors: %s",
                 trace_id,
-                raw_content,
+                getattr(response, "output_parsed", None),
                 exc,
             )
             raise HTTPException(
@@ -153,14 +167,3 @@ class MetadataExtractor:
         trace_metadata["validation_ok"] = True
         update_current_span_metadata(trace_metadata)
         return metadata.model_dump()
-
-
-_default_metadata_extractor = MetadataExtractor()
-
-
-async def extract_call_metadata(transcript: str, session_id: str | None = None) -> dict:
-    """Compatibility wrapper for legacy callers; new code should use MetadataExtractor.
-
-    `session_id` is optional and forwarded to tracing metadata when provided.
-    """
-    return await _default_metadata_extractor.extract(transcript, session_id=session_id)

@@ -186,16 +186,6 @@ analysis = await call_analyzer.analyze(
 )
 ```
 
-Legacy function wrappers are still available for backward compatibility:
-
-```python
-from debrief_agent.services.analysis import generate_call_analysis
-from debrief_agent.services.extraction import extract_call_metadata
-
-metadata = await extract_call_metadata(transcript_text)
-analysis = await generate_call_analysis(transcript_text, metadata)
-```
-
 ### Langfuse metadata taxonomy
 
 When Langfuse tracing is enabled, the service spans include bounded metadata fields that can be used for filtering in the Langfuse UI.
