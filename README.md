@@ -59,6 +59,7 @@ This project includes:
   - `summary`, `strengths`, `areas_for_improvement`, `action_items`
   - `objections_raised`, `competitor_mentioned`, `next_steps`
   - `sentiment`, `score`
+  - parsed via OpenAI Responses structured parsing into `AnalysisResult`
 - Persist calls + analyses in PostgreSQL.
 - Run rubric-driven experiment batches via CLI and write results to JSONL.
 - Use backend-controlled default rubrics (`ANALYSIS_RUBRICS`) without exposing rubric choice in the UI.
@@ -169,7 +170,7 @@ curl -X POST "http://localhost:8000/api/upload" \
 
 ### Service usage (internal)
 
-Preferred pattern in new code is class-based services:
+Service APIs are class-based only:
 
 ```python
 from debrief_agent.services.analysis import CallAnalyzer
@@ -185,6 +186,9 @@ analysis = await call_analyzer.analyze(
     rubric_names=["overpitching_rubric.txt"],
 )
 ```
+
+Backward-compatibility function wrappers were removed from services; use
+`MetadataExtractor.extract(...)` and `CallAnalyzer.analyze(...)` directly.
 
 ### Langfuse metadata taxonomy
 

@@ -19,12 +19,11 @@ Runtime behavior:
 - Resolves rubric files from backend defaults (`DEFAULT_ANALYSIS_RUBRICS`)
   unless an internal override list is provided.
 - Injects all resolved rubric text into the system prompt as strict guidance.
-- Calls the OpenAI Responses API and validates/parses output with
-  `AnalysisResult`.
+- Calls the OpenAI Responses API structured parser (`client.responses.parse`).
+- Uses Pydantic (`AnalysisResult`) directly as the response format model.
 
 Primary API:
-- `CallAnalyzer.analyze(...)` is the preferred class-based entrypoint.
-- `generate_call_analysis(...)` is kept as a compatibility wrapper for older callers.
+- `CallAnalyzer.analyze(...)` is the class-based entrypoint.
 
 Failure behavior:
 - OpenAI/API errors -> HTTPException 502
@@ -65,7 +64,7 @@ from debrief_agent.schemas.analysis import AnalysisResult
 
 logger = logging.getLogger(__name__)
 
-# Reusable async client — one instance for the lifetime of the process
+# Reusable async client -- one instance for the lifetime of the process
 _client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
 
@@ -110,14 +109,14 @@ class CallAnalyzer:
 
         system_prompt = build_analysis_system_prompt(rubric_text or None)
 
-        # --- Call the LLM via Responses API ---
+        # --- Call the LLM via Responses API with structured Pydantic parsing ---
         try:
-            response = await self._client.responses.create(
+            response = await cast(Any, self._client.responses).parse(
                 model="gpt-5-mini",
                 instructions=system_prompt,
                 input=build_analysis_user_message(transcript, metadata),
                 reasoning=cast(Any, {"effort": "medium"}),
-                text=cast(Any, {"format": {"type": "json_object"}}),  # guarantees valid JSON output
+                text_format=AnalysisResult,
             )
         except OpenAIError as exc:
             trace_metadata["error_type"] = "openai_error"
@@ -129,7 +128,7 @@ class CallAnalyzer:
             )
             raise HTTPException(
                 status_code=502,
-                detail=f"LLM analysis failed — OpenAI API error: {exc}",
+                detail=f"LLM analysis failed -- OpenAI API error: {exc}",
             )
 
         # --- Check for LLM refusal before parsing ---
@@ -160,49 +159,43 @@ class CallAnalyzer:
                 detail=f"LLM refused to analyse the transcript: {refusal_text}",
             )
 
-        # --- Parse + validate + normalise via Pydantic ---
-        # model_validate_json handles JSON parsing, schema validation, and
-        # empty-string -> None normalisation in one step.
-        raw_content = response.output_text or ""
-
+        # --- Read parsed model and validate fallback payloads when needed ---
         try:
-            result = AnalysisResult.model_validate_json(raw_content)
-        except ValidationError as exc:
+            parsed_payload = getattr(response, "output_parsed", None)
+            if parsed_payload is None:
+                parsed_payload = next(
+                    (
+                        getattr(content_part, "parsed", None)
+                        for item in (response.output or [])
+                        for content_part in (getattr(item, "content", None) or [])
+                        if getattr(content_part, "type", None) in {"output_text", "text"}
+                    ),
+                    None,
+                )
+
+            if parsed_payload is None:
+                raise ValueError("No parsed payload returned by Responses API")
+
+            result = (
+                parsed_payload
+                if isinstance(parsed_payload, AnalysisResult)
+                else AnalysisResult.model_validate(parsed_payload)
+            )
+        except (ValidationError, ValueError, TypeError) as exc:
             trace_metadata["validation_ok"] = False
             trace_metadata["error_type"] = "validation_error"
             update_current_span_metadata(trace_metadata)
             logger.error(
-                "LLM analysis response failed Pydantic validation (trace_id=%s). Raw content: %r — Errors: %s",
+                "LLM analysis response failed Pydantic validation (trace_id=%s). Parsed payload: %r -- Errors: %s",
                 trace_id,
-                raw_content,
+                getattr(response, "output_parsed", None),
                 exc,
             )
             raise HTTPException(
                 status_code=502,
-                detail="LLM analysis failed — response did not match expected schema.",
+                detail="LLM analysis failed -- response did not match expected schema.",
             )
 
         trace_metadata["validation_ok"] = True
         update_current_span_metadata(trace_metadata)
         return result.model_dump()
-
-
-_default_call_analyzer = CallAnalyzer()
-
-
-async def generate_call_analysis(
-    transcript: str,
-    metadata: dict,
-    rubric_names: list[str] | None = None,
-    session_id: str | None = None,
-) -> dict:
-    """Compatibility wrapper for legacy callers; new code should use CallAnalyzer.
-
-    `session_id` is optional and forwarded to tracing metadata when provided.
-    """
-    return await _default_call_analyzer.analyze(
-        transcript=transcript,
-        metadata=metadata,
-        rubric_names=rubric_names,
-        session_id=session_id,
-    )
