@@ -54,11 +54,11 @@ This project includes:
   - `rep_name`
   - `contact_name`
   - `contact_title`
-  - `deal_stage`
+  - `deal_stage` (`discovery` | `demo` | `proposal` | `negotiation` | `closing` | `unknown`)
 - Generate structured analysis/debrief with:
   - `summary`, `strengths`, `areas_for_improvement`, `action_items`
   - `objections_raised`, `competitor_mentioned`, `next_steps`
-  - `sentiment`, `score`
+  - `sentiment` (`positive` | `neutral` | `negative`), `score`
   - parsed via OpenAI Responses structured parsing into `AnalysisResult`
 - Persist calls + analyses in PostgreSQL.
 - Run rubric-driven experiment batches via CLI and write results to JSONL.
@@ -333,5 +333,3 @@ From `src/debrief_agent/core/config.py`:
     ```zsh
     uv --version
     ```
-
-

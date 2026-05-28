@@ -1,37 +1,44 @@
+from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, Field
+
+
+class DealStage(str, Enum):
+    """Canonical deal stages accepted by CallMetadataExtraction.deal_stage."""
+
+    DISCOVERY = "discovery"
+    DEMO = "demo"
+    PROPOSAL = "proposal"
+    NEGOTIATION = "negotiation"
+    CLOSING = "closing"
+    UNKNOWN = "unknown"
 
 
 class CallMetadataExtraction(BaseModel):
     """
-    Pydantic model for the structured JSON output of the LLM metadata extraction pass.
-    Used to parse, validate, and normalise the LLM response in one step.
+    Structured extraction payload returned by the metadata LLM step.
 
-    All fields are optional — if the LLM cannot determine a value it returns null,
-    which maps cleanly to None here.
+    The model is used directly with OpenAI structured parsing and then validated
+    by Pydantic before persistence. All fields are optional: missing values should
+    be returned as null.
+
+    `deal_stage` is enum-constrained to `DealStage` to keep downstream analytics
+    consistent and prevent free-form stage labels.
     """
-    rep_name: Optional[str] = None
-    contact_name: Optional[str] = None
-    contact_title: Optional[str] = None
-    deal_stage: Optional[str] = None
+    rep_name: Optional[str] = Field(default=None, alias="First name (or full name) of the sales representative on the call")
+    contact_name: Optional[str] = Field(default=None, alias="First name (or full name) of the prospect/customer on the call")
+    contact_title: Optional[str] = Field(default=None, alias="Job title of the prospect (e.g. 'CTO', 'VP Sales')")
+    deal_stage: Optional[DealStage] = Field(default=None, alias="One of: 'discovery', 'demo', 'proposal', 'negotiation', 'closing', 'unknown'")
 
     @field_validator("rep_name", "contact_name", "contact_title", "deal_stage", mode="before")
     @classmethod
-    def empty_str_to_none(cls, v: object) -> Optional[str]:
+    def empty_str_to_none(cls, v: object) -> object:
         """
-        Runs on each of the four fields before Pydantic checks the type.
+        Normalise empty/whitespace strings to None before type validation.
 
-        Problem it solves: the LLM sometimes returns an empty string ""
-        instead of null when it can't find a value. We want to store None
-        in the database, not an empty string.
-
-        Examples:
-            "Alex"   → "Alex"    (normal value, returned as-is after stripping)
-            "  Alex" → "Alex"    (trims accidental whitespace)
-            ""       → None      (empty string becomes None)
-            "   "    → None      (whitespace-only string becomes None)
-            None     → None      (LLM returned null, passed through unchanged)
+        This keeps DB values clean and allows enum coercion for `deal_stage`
+        after stripping user/model whitespace.
         """
         # If the value is a string, strip whitespace and return None if it's empty
         if isinstance(v, str):

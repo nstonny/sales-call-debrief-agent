@@ -18,19 +18,7 @@ along with context about the call (rep name, contact name and title, deal stage)
 
 Your job is to produce a structured debrief of the call as a JSON object.
 
-Return ONLY a valid JSON object with exactly these keys:
-
-{
-  "summary":                string or null,   // 2–4 sentence narrative summary of the call
-  "strengths":              array of strings, // What the rep did well (each item one concise sentence)
-  "areas_for_improvement":  array of strings, // Specific coaching points for the rep
-  "action_items":           array of strings, // Concrete follow-up actions agreed or recommended
-  "objections_raised":      array of strings, // Objections the prospect raised (e.g. "pricing too high")
-  "competitor_mentioned":   string or null,   // Name of any competitor mentioned, or null
-  "next_steps":             string or null,   // What was agreed as the next step at the end of the call
-  "sentiment":              string,           // Overall call sentiment: "positive", "neutral", or "negative"
-  "score":                  number            // Overall rep performance score from 0.0 to 5.0
-}
+Return ONLY a valid JSON object that matches the provided AnalysisResult schema exactly.
 
 Scoring guide for "score":
 
@@ -39,6 +27,7 @@ Scoring guide for "score":
   1 : Poor — significant rep errors, relationship or deal likely damaged
 
 Rules:
+- include only schema-defined keys
 - Use the call context (contact title, deal stage) to calibrate your coaching.
   e.g. if the contact is a CTO, assess technical credibility; if deal stage is
   "negotiation", focus on how well the rep handled pricing pressure.
@@ -49,18 +38,11 @@ Rules:
 
 
 def build_analysis_system_prompt(rubric_text: str | None = None) -> str:
-    """
-    Build the analysis system prompt.
+    """Build the system prompt used for structured analysis generation.
 
     When `rubric_text` is provided, it is appended as strict evaluation
-    guidance. In rubric-enabled runs, rubric scoring guidance takes precedence
-    over the default inline score examples in `ANALYSIS_SYSTEM_PROMPT`.
-
-    Args:
-        rubric_text: Combined rubric text (or None).
-
-    Returns:
-        Final system prompt string to send to the LLM.
+    guidance. In rubric-enabled runs, rubric scoring instructions override
+    the default score examples embedded in `ANALYSIS_SYSTEM_PROMPT`.
     """
     if not rubric_text:
         return ANALYSIS_SYSTEM_PROMPT
@@ -76,20 +58,11 @@ def build_analysis_system_prompt(rubric_text: str | None = None) -> str:
 
 
 def build_analysis_user_message(transcript: str, metadata: dict) -> str:
-    """
-    Build the user-turn prompt for analysis.
+    """Build the analysis user-turn payload with call context + transcript.
 
-    Adds extracted metadata context so the model can tailor coaching output to
-    role and stage (for example, CTO vs. non-technical buyer, discovery vs.
-    negotiation).
-
-    Args:
-        transcript: Raw transcript text.
-        metadata: Dict with keys `rep_name`, `contact_name`,
-            `contact_title`, and `deal_stage`.
-
-    Returns:
-        User message string containing context block + transcript.
+    The context block is derived from extracted metadata so the model can adapt
+    coaching to persona and deal stage while still returning `AnalysisResult`
+    JSON only.
     """
     rep = metadata.get("rep_name") or "Unknown rep"
     contact = metadata.get("contact_name") or "Unknown contact"
