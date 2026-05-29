@@ -26,10 +26,10 @@ class CallMetadataExtraction(BaseModel):
     `deal_stage` is enum-constrained to `DealStage` to keep downstream analytics
     consistent and prevent free-form stage labels.
     """
-    rep_name: Optional[str] = Field(default=None, alias="First name (or full name) of the sales representative on the call")
-    contact_name: Optional[str] = Field(default=None, alias="First name (or full name) of the prospect/customer on the call")
-    contact_title: Optional[str] = Field(default=None, alias="Job title of the prospect (e.g. 'CTO', 'VP Sales')")
-    deal_stage: Optional[DealStage] = Field(default=None, alias="One of: 'discovery', 'demo', 'proposal', 'negotiation', 'closing', 'unknown'")
+    rep_name: Optional[str] = Field(default=None, description="First name (or full name) of the sales representative on the call")
+    contact_name: Optional[str] = Field(default=None, description="First name (or full name) of the prospect/customer on the call")
+    contact_title: Optional[str] = Field(default=None, description="Job title of the prospect (e.g. 'CTO', 'VP Sales')")
+    deal_stage: Optional[DealStage] = Field(default=None, description="One of: 'discovery', 'demo', 'proposal', 'negotiation', 'closing', 'unknown'")
 
     @field_validator("rep_name", "contact_name", "contact_title", "deal_stage", mode="before")
     @classmethod
