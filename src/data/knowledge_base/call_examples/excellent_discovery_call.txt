@@ -1,0 +1,194 @@
+CALL TYPE: Initial Discovery Call
+
+Company: Acme Manufacturing
+Rep: Sarah Johnson
+Prospect: Michael Brown, VP Operations
+
+--------------------------------------------------
+
+Rep:
+Thanks for joining today, Michael. Before we dive in, I'd love to understand your role and what prompted you to take this meeting.
+
+Prospect:
+I'm responsible for operations across our manufacturing sites. We've been looking at ways to improve visibility into production and reduce delays.
+
+Rep:
+Tell me a little about how you're currently tracking production performance.
+
+Prospect:
+Mostly through spreadsheets and reports generated from several systems.
+
+Rep:
+How much effort is involved in putting those reports together?
+
+Prospect:
+Probably 15 to 20 hours every week across multiple teams.
+
+Rep:
+That's significant. What challenges does that create for the business?
+
+Prospect:
+The biggest issue is delayed decision making. By the time managers receive the reports, the information is already outdated.
+
+Rep:
+Can you give me an example of how that impacts operations?
+
+Prospect:
+Last quarter we missed a production target because we didn't identify a bottleneck quickly enough.
+
+Rep:
+What was the business impact of that?
+
+Prospect:
+Roughly €250,000 in delayed shipments.
+
+Rep:
+That's helpful context. Is improving operational visibility a strategic priority for leadership this year?
+
+Prospect:
+Yes. It's one of our top three initiatives.
+
+Rep:
+What goals have been established around that initiative?
+
+Prospect:
+We're trying to reduce reporting delays by 75% and improve production efficiency by 10%.
+
+Rep:
+How are those goals being measured?
+
+Prospect:
+Reporting cycle time and plant output metrics.
+
+--------------------------------------------------
+QUALIFICATION DISCUSSION
+--------------------------------------------------
+
+Rep:
+When evaluating potential solutions, what factors will be most important?
+
+Prospect:
+Ease of implementation, reporting capabilities, and integration with our ERP system.
+
+Rep:
+Are there any security or compliance requirements we should be aware of?
+
+Prospect:
+Yes, we require SOC 2 compliance.
+
+Rep:
+Understood. How does your organization typically make decisions for projects like this?
+
+Prospect:
+Operations evaluates the solution, IT reviews security, and procurement handles commercial negotiations.
+
+Rep:
+Who besides yourself would be involved in the final decision?
+
+Prospect:
+Our CIO and CFO.
+
+Rep:
+Would either of them need to approve the budget?
+
+Prospect:
+The CFO is the final approver.
+
+Rep:
+Has budget already been allocated for this initiative?
+
+Prospect:
+Yes, funding has been approved for this fiscal year.
+
+--------------------------------------------------
+PAIN EXPLORATION
+--------------------------------------------------
+
+Rep:
+If nothing changes over the next twelve months, what concerns you most?
+
+Prospect:
+We'll continue making decisions based on outdated information.
+
+Rep:
+And what would that mean for the business?
+
+Prospect:
+Lower efficiency, higher costs, and potentially missed customer commitments.
+
+Rep:
+How important is solving this problem relative to other initiatives?
+
+Prospect:
+Extremely important.
+
+--------------------------------------------------
+FUTURE STATE
+--------------------------------------------------
+
+Rep:
+Let's imagine this problem is solved. What does success look like?
+
+Prospect:
+Managers have access to real-time production information, reporting becomes largely automated, and operational issues are identified immediately.
+
+Rep:
+What impact would that have financially?
+
+Prospect:
+We estimate savings of at least €500,000 annually.
+
+--------------------------------------------------
+NEXT STEPS
+--------------------------------------------------
+
+Rep:
+Based on what we've discussed, it sounds like reducing reporting delays and improving operational visibility are key priorities. It also sounds like there's measurable financial impact and executive sponsorship behind this initiative.
+
+Prospect:
+That's correct.
+
+Rep:
+Would it make sense for our next meeting to include your CIO so we can discuss technical requirements and integration considerations?
+
+Prospect:
+Yes, I can arrange that.
+
+Rep:
+Great. I'll send a proposed agenda and we'll schedule a technical discovery session.
+
+Prospect:
+Sounds good.
+
+--------------------------------------------------
+MANAGER COACHING NOTES
+--------------------------------------------------
+
+Strengths:
+- Established strong rapport.
+- Asked open-ended questions.
+- Quantified business impact (€250,000 delay cost).
+- Identified measurable goals.
+- Explored consequences of inaction.
+- Identified decision criteria.
+- Mapped decision process.
+- Identified economic buyer (CFO).
+- Confirmed budget availability.
+- Secured clear next steps.
+
+MEDDIC Elements Observed:
+✓ Metrics
+✓ Economic Buyer
+✓ Decision Criteria
+✓ Decision Process
+✓ Identify Pain
+✓ Champion (potentially VP Operations)
+
+SPIN Elements Observed:
+✓ Situation Questions
+✓ Problem Questions
+✓ Implication Questions
+✓ Need-Payoff Questions
+
+Discovery Score:
+10/10
