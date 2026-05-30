@@ -16,6 +16,9 @@ dependencies = [
     "uvicorn>=0.34.0",
     "openai>=1.75.0",
     "langfuse>=4.6.1",
+    "qdrant-client>=1.18.0",
+    "langchain-qdrant>=1.1.0",
+    "langchain-openai>=1.2.2",
 ]
 
 [tool.setuptools.packages.find]
