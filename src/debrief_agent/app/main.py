@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from langfuse import get_client
 
 from debrief_agent.api.router import api_router
+from debrief_agent.core.qdrant import close_qdrant_client
 
 # --- Configure logging ---
 # Sends all INFO+ messages to stdout in a readable format.
@@ -20,6 +21,12 @@ async def lifespan(_: FastAPI):
     try:
         yield
     finally:
+        try:
+            # Close shared Qdrant client before process exit.
+            await close_qdrant_client()
+        except Exception:
+            logging.exception("Failed to close Qdrant client on shutdown")
+
         try:
             # Flush buffered Langfuse traces before process exit.
             get_client().flush()
