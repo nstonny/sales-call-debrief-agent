@@ -10,6 +10,7 @@ LLM-powered pipeline for analyzing sales call transcripts and producing structur
 [![Alembic](https://img.shields.io/badge/Alembic-Migrations-4B5563)](https://alembic.sqlalchemy.org/)
 [![OpenAI](https://img.shields.io/badge/OpenAI-Responses_API-412991?logo=openai&logoColor=white)](https://platform.openai.com/docs/api-reference/responses)
 [![Langfuse](https://img.shields.io/badge/Langfuse-Observability-0EA5E9)](https://langfuse.com/)
+[![Qdrant](https://img.shields.io/badge/Qdrant-Vector_DB-DC244C)](https://qdrant.tech/)
 [![uv](https://img.shields.io/badge/uv-Package_Manager-111827)](https://docs.astral.sh/uv/)
 
 This project includes:
@@ -44,6 +45,7 @@ This project includes:
 - Alembic
 - OpenAI Responses API
 - Langfuse (observability/tracing)
+- Qdrant (vector database)
 - uv
 - Jupyter (dev dependency)
 
@@ -114,6 +116,12 @@ DATABASE_URL=postgresql+asyncpg://<user>:<password>@localhost:5432/<db_name>
 OPENAI_API_KEY=sk-...
 # Optional override of backend defaults
 ANALYSIS_RUBRICS=overpitching_rubric.txt,discovery_rubric.txt,pricing_negotiation_rubric.txt
+
+# Qdrant
+QDRANT_URL=http://localhost:6333
+QDRANT_API_KEY=
+QDRANT_COLLECTION_NAME=sales_knowledge_chunks
+QDRANT_TIMEOUT_SECONDS=10
 ```
 
 ### 5) Run migrations
@@ -189,6 +197,19 @@ analysis = await call_analyzer.analyze(
 
 Backward-compatibility function wrappers were removed from services; use
 `MetadataExtractor.extract(...)` and `CallAnalyzer.analyze(...)` directly.
+
+### Qdrant usage (internal)
+
+Use the shared async client in `src/debrief_agent/core/qdrant.py`.
+
+```python
+from debrief_agent.core.qdrant import get_qdrant_client, get_qdrant_collection_name
+
+qdrant_client = get_qdrant_client()
+collection_name = get_qdrant_collection_name()
+```
+
+The app closes this shared client on shutdown in `src/debrief_agent/app/main.py`.
 
 ### Langfuse metadata taxonomy
 
@@ -308,6 +329,15 @@ From `src/debrief_agent/core/config.py`:
 - `ANALYSIS_RUBRICS` (optional)
   - Comma-separated rubric filenames from `src/data/rubrics`
   - Default: `overpitching_rubric.txt,discovery_rubric.txt,pricing_negotiation_rubric.txt`
+- `QDRANT_URL` (optional)
+  - Default: `http://localhost:6333`
+- `QDRANT_API_KEY` (optional)
+  - Required only when your Qdrant deployment enforces auth
+- `QDRANT_COLLECTION_NAME` (optional)
+  - Default: `sales_knowledge_chunks`
+- `QDRANT_TIMEOUT_SECONDS` (optional)
+  - Positive integer request timeout in seconds
+  - Default: `10`
 
 ## Troubleshooting
 
