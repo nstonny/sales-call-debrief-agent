@@ -19,6 +19,9 @@ dependencies = [
     "qdrant-client>=1.18.0",
     "langchain-qdrant>=1.1.0",
     "langchain-openai>=1.2.2",
+    "langchain-community>=0.4.2",
+    "pypdf>=6.12.2",
+    "docx2txt>=0.9",
 ]
 
 [tool.setuptools.packages.find]
