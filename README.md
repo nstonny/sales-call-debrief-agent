@@ -30,6 +30,7 @@ This project includes:
 - [Quickstart (First Run)](#quickstart-first-run)
 - [Usage](#usage)
 - [RAG Ingestion (Coaching Guides)](#rag-ingestion-coaching-guides)
+- [RAG Ingestion (Call Examples)](#rag-ingestion-call-examples)
 - [Experiments CLI (Rubric Testing)](#experiments-cli-rubric-testing)
 - [Project Structure](#project-structure)
 - [Configuration](#configuration)
@@ -66,6 +67,8 @@ This project includes:
 - Persist calls + analyses in PostgreSQL.
 - Structure-aware chunking for DOCX coaching guides with optional JSONL chunk-review artifacts.
 - Qdrant ingestion CLI for coaching guides (`--dry-run` supported).
+- Section-aware chunking for call examples using dashed heading markers, with optional JSONL trace output.
+- Qdrant ingestion CLI for call examples (`--dry-run` supported).
 - Run rubric-driven experiment batches via CLI and write results to JSONL.
 - Use backend-controlled default rubrics (`ANALYSIS_RUBRICS`) without exposing rubric choice in the UI.
 
@@ -203,7 +206,7 @@ Backward-compatibility function wrappers were removed from services; use
 
 ### Qdrant usage (internal)
 
-Use the shared async client in `src/debrief_agent/core/qdrant.py`.
+Use the shared sync client in `src/debrief_agent/core/qdrant.py`.
 
 ```python
 from debrief_agent.core.qdrant import (
@@ -246,6 +249,39 @@ uv run python -m debrief_agent.rag.ingestion.ingest_coaching_guides \
   --guides-path "src/data/knowledge_base/coaching_guides" \
   --trace-out "experiments.local/coaching_guides_level1_chunks.jsonl" \
   --max-chars 1200
+```
+
+### RAG Ingestion (Call Examples)
+
+Ingestion CLI module: `src/debrief_agent/rag/ingestion/ingest_call_examples.py`
+
+What it does:
+- Loads `.txt` call example files from `src/data/knowledge_base/call_examples`
+- Creates one chunk per section between dashed heading blocks, e.g.:
+  - `--------------------------------------------------`
+  - `QUALIFICATION DISCUSSION`
+  - `--------------------------------------------------`
+- Writes chunk-review JSONL (default: `experiments.local/call_examples_chunks.jsonl`)
+- Optionally stores chunks in Qdrant
+
+Dry-run (chunk + JSONL trace only):
+
+```zsh
+uv run python -m debrief_agent.rag.ingestion.ingest_call_examples --dry-run
+```
+
+Store chunks in Qdrant:
+
+```zsh
+uv run python -m debrief_agent.rag.ingestion.ingest_call_examples
+```
+
+Optional flags:
+
+```zsh
+uv run python -m debrief_agent.rag.ingestion.ingest_call_examples \
+  --call-examples-path "src/data/knowledge_base/call_examples" \
+  --trace-out "experiments.local/call_examples_chunks.jsonl"
 ```
 
 ### Langfuse metadata taxonomy
@@ -400,5 +436,3 @@ From `src/debrief_agent/core/config.py`:
     ```zsh
     uv --version
     ```
-
-
