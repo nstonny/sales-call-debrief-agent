@@ -29,6 +29,7 @@ This project includes:
 - [Installation](#installation)
 - [Quickstart (First Run)](#quickstart-first-run)
 - [Usage](#usage)
+- [RAG Ingestion (Coaching Guides)](#rag-ingestion-coaching-guides)
 - [Experiments CLI (Rubric Testing)](#experiments-cli-rubric-testing)
 - [Project Structure](#project-structure)
 - [Configuration](#configuration)
@@ -63,6 +64,8 @@ This project includes:
   - `sentiment` (`positive` | `neutral` | `negative`), `score`
   - parsed via OpenAI Responses structured parsing into `AnalysisResult`
 - Persist calls + analyses in PostgreSQL.
+- Structure-aware chunking for DOCX coaching guides with optional JSONL chunk-review artifacts.
+- Qdrant ingestion CLI for coaching guides (`--dry-run` supported).
 - Run rubric-driven experiment batches via CLI and write results to JSONL.
 - Use backend-controlled default rubrics (`ANALYSIS_RUBRICS`) without exposing rubric choice in the UI.
 
@@ -203,13 +206,47 @@ Backward-compatibility function wrappers were removed from services; use
 Use the shared async client in `src/debrief_agent/core/qdrant.py`.
 
 ```python
-from debrief_agent.core.qdrant import get_qdrant_client, get_qdrant_collection_name
+from debrief_agent.core.qdrant import (
+    get_sync_qdrant_client,
+    get_sync_qdrant_collection_name,
+)
 
-qdrant_client = get_qdrant_client()
-collection_name = get_qdrant_collection_name()
+qdrant_client = get_sync_qdrant_client()
+collection_name = get_sync_qdrant_collection_name()
 ```
 
 The app closes this shared client on shutdown in `src/debrief_agent/app/main.py`.
+
+### RAG Ingestion (Coaching Guides)
+
+Ingestion CLI module: `src/debrief_agent/rag/ingestion/ingest_coaching_guides.py`
+
+What it does:
+- Loads `.docx` files from `src/data/knowledge_base/coaching_guides`
+- Applies structure-aware chunking via `CoachingGuideChunker`
+- Writes chunk-review JSONL (default: `experiments.local/coaching_guides_level1_chunks.jsonl`)
+- Optionally stores chunks in Qdrant
+
+Dry-run (chunk + JSONL trace only):
+
+```zsh
+uv run python -m debrief_agent.rag.ingestion.ingest_coaching_guides --dry-run
+```
+
+Store chunks in Qdrant:
+
+```zsh
+uv run python -m debrief_agent.rag.ingestion.ingest_coaching_guides
+```
+
+Optional flags:
+
+```zsh
+uv run python -m debrief_agent.rag.ingestion.ingest_coaching_guides \
+  --guides-path "src/data/knowledge_base/coaching_guides" \
+  --trace-out "experiments.local/coaching_guides_level1_chunks.jsonl" \
+  --max-chars 1200
+```
 
 ### Langfuse metadata taxonomy
 
@@ -363,3 +400,5 @@ From `src/debrief_agent/core/config.py`:
     ```zsh
     uv --version
     ```
+
+

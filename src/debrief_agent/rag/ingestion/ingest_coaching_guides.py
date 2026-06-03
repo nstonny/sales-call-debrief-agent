@@ -1,4 +1,11 @@
-from __future__ import annotations
+"""CLI ingestion entrypoint for coaching guide chunking and optional Qdrant upsert.
+
+This script:
+1) loads DOCX guides from `coaching_guides`,
+2) performs structure-aware chunking,
+3) writes a JSONL trace artifact for review,
+4) optionally stores chunks in Qdrant.
+"""
 
 import argparse
 from pathlib import Path
@@ -12,6 +19,7 @@ DEFAULT_TRACE_PATH = Path("experiments.local/coaching_guides_level1_chunks.jsonl
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Build and return CLI arguments for coaching-guide ingestion."""
     parser = argparse.ArgumentParser(
         description="Chunk coaching guide DOCX files and ingest them into Qdrant."
     )
@@ -47,16 +55,17 @@ def run_ingestion(
     max_chars: int,
     dry_run: bool,
 ) -> None:
+    """Run load -> chunk -> trace-write -> optional Qdrant upsert pipeline."""
     documents = LoaderFactory().load_documents(guides_path)
     chunker = CoachingGuideChunker(max_chars=max_chars)
     chunks = chunker.chunk_documents(documents, trace_output_path=trace_output_path)
 
     if not dry_run and chunks:
         ensure_collection()
-        # Lazy import prevents Qdrant connection attempts during dry-run.
-        from debrief_agent.rag.vectorstore.qdrant_store import vector_store
+        # Lazy import keeps dry-run independent of Qdrant availability.
+        from debrief_agent.rag.vectorstore.qdrant_store import get_vector_store
 
-        vector_store.add_documents(chunks)
+        get_vector_store().add_documents(chunks)
 
     print(f"Loaded {len(documents)} source documents from {guides_path}")
     print(f"Created {len(chunks)} chunks")
@@ -68,6 +77,7 @@ def run_ingestion(
 
 
 def main() -> None:
+    """Parse CLI args and execute coaching-guide ingestion."""
     args = build_parser().parse_args()
     run_ingestion(
         guides_path=args.guides_path,
