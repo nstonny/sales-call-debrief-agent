@@ -31,6 +31,7 @@ This project includes:
 - [Usage](#usage)
 - [RAG Ingestion (Coaching Guides)](#rag-ingestion-coaching-guides)
 - [RAG Ingestion (Call Examples)](#rag-ingestion-call-examples)
+- [PDF to Markdown Prep (MarkItDown)](#pdf-to-markdown-prep-markitdown)
 - [Experiments CLI (Rubric Testing)](#experiments-cli-rubric-testing)
 - [Project Structure](#project-structure)
 - [Configuration](#configuration)
@@ -192,10 +193,11 @@ from debrief_agent.services.extraction import MetadataExtractor
 
 metadata_extractor = MetadataExtractor()
 call_analyzer = CallAnalyzer()
+transcript_text = "<paste transcript text here>"
 
 metadata = await metadata_extractor.extract(transcript_text)
 analysis = await call_analyzer.analyze(
-    transcript=transcript_text,
+    transcript="<paste transcript text here>",
     metadata=metadata,
     rubric_names=["overpitching_rubric.txt"],
 )
@@ -282,6 +284,31 @@ Optional flags:
 uv run python -m debrief_agent.rag.ingestion.ingest_call_examples \
   --call-examples-path "src/data/knowledge_base/call_examples" \
   --trace-out "experiments.local/call_examples_chunks.jsonl"
+```
+
+### PDF to Markdown Prep (MarkItDown)
+
+Conversion CLI module: `src/debrief_agent/rag/ingestion/convert_pdf_to_markdown.py`
+
+Current prep policy:
+- Keep source PDFs and converted Markdown side-by-side in each category.
+- Write converted files to nested `processed_markdown/` folders.
+  - Example mapping:
+    - `src/data/knowledge_base/sales_frameworks/MEDDIC_Sales_Guide.pdf`
+    - `src/data/knowledge_base/sales_frameworks/processed_markdown/MEDDIC_Sales_Guide.md`
+- Use normalization profile `heading_list_table_canonical_v1` for conversion cleanup
+  (headings, lists, tables, and page-artifact removal) so section-aware chunking remains stable.
+
+Current cleanup behavior for converted markdown:
+- Removes page numbers and page-reference lines (for example: `3`, `10`, `Page 2`, `## Page 2`).
+- Removes repeated page headers/footers (for example: repeated guide-title and confidentiality lines).
+- Removes copyright/footer lines (for example: `All rights reserved`).
+- Removes title-page and table-of-contents front matter, starting content at the first real section (`Introduction to MEDDIC`).
+
+Convert MEDDIC PDF to markdown (default source/target):
+
+```zsh
+uv run python -m debrief_agent.rag.ingestion.convert_pdf_to_markdown
 ```
 
 ### Langfuse metadata taxonomy
