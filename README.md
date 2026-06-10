@@ -288,7 +288,7 @@ uv run python -m debrief_agent.rag.ingestion.ingest_call_examples \
 
 ### PDF to Markdown Prep (MarkItDown)
 
-Conversion CLI module: `src/debrief_agent/rag/ingestion/convert_pdf_to_markdown.py`
+Conversion CLI module: `src/debrief_agent/rag/ingestion/convert_pdf_to_markdown_markitdown.py`
 
 Current prep policy:
 - Keep source PDFs and converted Markdown side-by-side in each category.
@@ -308,7 +308,7 @@ Current cleanup behavior for converted markdown:
 Convert MEDDIC PDF to markdown (default source/target):
 
 ```zsh
-uv run python -m debrief_agent.rag.ingestion.convert_pdf_to_markdown
+uv run python -m debrief_agent.rag.ingestion.convert_pdf_to_markdown_markitdown
 ```
 
 ### Langfuse metadata taxonomy

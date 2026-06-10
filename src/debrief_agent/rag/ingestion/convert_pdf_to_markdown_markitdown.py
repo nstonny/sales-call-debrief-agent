@@ -16,6 +16,25 @@ DEFAULT_TARGET_MARKDOWN_PATH = Path(
     "src/data/knowledge_base/sales_frameworks/processed_markdown/MEDDIC_Sales_Guide.md"
 )
 DEFAULT_NORMALIZATION_PROFILE = "heading_list_table_canonical_v1"
+HEADING_CONNECTOR_WORDS = {
+    "a",
+    "an",
+    "and",
+    "as",
+    "at",
+    "by",
+    "for",
+    "from",
+    "in",
+    "into",
+    "of",
+    "on",
+    "or",
+    "the",
+    "to",
+    "vs",
+    "with",
+}
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -78,6 +97,17 @@ def _looks_like_heading(line: str) -> bool:
     if not letters_only:
         return False
 
+    # Allow lowercase connector words in title-case headings.
+    non_connector_words = [
+        word for word in letters_only if word.lower() not in HEADING_CONNECTOR_WORDS
+    ]
+    if non_connector_words:
+        title_non_connector_ratio = sum(
+            1 for word in non_connector_words if word.isupper() or word[0].isupper()
+        ) / len(non_connector_words)
+        if title_non_connector_ratio >= 0.8:
+            return True
+
     titleish_ratio = sum(
         1 for word in letters_only if word.isupper() or word[0].isupper()
     ) / len(letters_only)
@@ -88,6 +118,11 @@ def _canonicalize_list_prefix(line: str) -> str:
     stripped = line.strip()
     if not stripped:
         return ""
+
+    # Normalize common PDF extraction bullet artifacts.
+    artifact_bullet_match = re.match(r"^(?:\(cid:127\)|ﬁ|n)\s+(.+)$", stripped)
+    if artifact_bullet_match:
+        return f"- {artifact_bullet_match.group(1).strip()}"
 
     bullet_match = re.match(r"^[-*+]\s+(.+)$", stripped)
     if bullet_match:
@@ -123,6 +158,187 @@ def _normalize_table_block(lines: list[str]) -> list[str]:
     header_cells = [cell.strip() for cell in normalized_rows[0].strip("|").split("|")]
     separator = "| " + " | ".join(["---"] * len(header_cells)) + " |"
     return [normalized_rows[0], separator, *normalized_rows[1:]]
+
+
+def _build_markdown_table(headers: list[str], rows: list[list[str]]) -> list[str]:
+    if not headers or not rows:
+        return []
+
+    header = "| " + " | ".join(cell.strip() for cell in headers) + " |"
+    separator = "| " + " | ".join(["---"] * len(headers)) + " |"
+    body = ["| " + " | ".join(cell.strip() for cell in row) + " |" for row in rows]
+    return [header, separator, *body]
+
+
+def _chunk_rows(values: list[str], width: int) -> list[list[str]]:
+    if width <= 0 or not values or len(values) % width != 0:
+        return []
+    return [values[idx : idx + width] for idx in range(0, len(values), width)]
+
+
+def _split_line_once(line: str, split_regex: str) -> list[str]:
+    match = re.match(split_regex, line)
+    if not match:
+        return [line]
+    return [match.group(1).strip(), match.group(2).strip()]
+
+
+def _parse_six_pillars_table(section_lines: list[str]) -> list[str]:
+    headers = ["Letter", "Element", "Core Question"]
+    if section_lines[:3] != headers:
+        return []
+
+    remaining = section_lines[3:]
+    first_column: list[str] = []
+    while remaining and re.fullmatch(r"[A-Za-z]{1,2}", remaining[0]):
+        first_column.append(remaining.pop(0))
+
+    if not first_column or len(remaining) != 2 * len(first_column):
+        return []
+
+    rows = [
+        [first_column[idx], remaining[2 * idx], remaining[2 * idx + 1]]
+        for idx in range(len(first_column))
+    ]
+    return _build_markdown_table(headers, rows)
+
+
+def _parse_champion_table(section_lines: list[str]) -> list[str]:
+    headers = ["Role", "Definition", "What They Do For You"]
+    if not section_lines or section_lines[0] != headers[0]:
+        return []
+
+    try:
+        definition_idx = section_lines.index(headers[1])
+        outcome_idx = section_lines.index(headers[2])
+    except ValueError:
+        return []
+
+    if outcome_idx != definition_idx + 1:
+        return []
+
+    first_column = section_lines[1:definition_idx]
+    if not first_column:
+        return []
+
+    remaining = section_lines[outcome_idx + 1 :]
+    if len(remaining) == 2 * len(first_column) - 1 and remaining:
+        split_last = _split_line_once(remaining[-1], r"^(.+?)\s+([A-Z][a-z].+)$")
+        remaining = [*remaining[:-1], *split_last]
+
+    if len(remaining) != 2 * len(first_column):
+        return []
+
+    rows = [
+        [first_column[idx], remaining[2 * idx], remaining[2 * idx + 1]]
+        for idx in range(len(first_column))
+    ]
+    return _build_markdown_table(headers, rows)
+
+
+def _parse_decision_process_table(section_lines: list[str]) -> list[str]:
+    headers = ["Stage", "Description / Owner / Est. Duration"]
+    if section_lines[:2] != headers:
+        return []
+    rows = _chunk_rows(section_lines[2:], len(headers))
+    return _build_markdown_table(headers, rows) if rows else []
+
+
+def _parse_scoring_rubric_table(section_lines: list[str]) -> list[str]:
+    headers = [
+        "Element",
+        "0 — Not Identified",
+        "1 — Partially Known",
+        "2 — Fully Qualified",
+    ]
+    if section_lines[:4] != headers:
+        return []
+
+    values = section_lines[4:]
+    repaired_values: list[str] = []
+    for value in values:
+        repaired_values.extend(
+            _split_line_once(value, r"^(.+?\bdiscussed)\s+(Agreed\b.+)$")
+        )
+
+    second_pass: list[str] = []
+    for value in repaired_values:
+        second_pass.extend(
+            _split_line_once(value, r"^(.+?\bknown)\s+(Full\b.+)$")
+        )
+
+    rows = _chunk_rows(second_pass, len(headers))
+    return _build_markdown_table(headers, rows) if rows else []
+
+
+def _parse_best_practices_table(section_lines: list[str]) -> list[str]:
+    headers = ["Stage", "MEDDIC Focus", "Key Action"]
+    if section_lines[:3] != headers:
+        return []
+    rows = _chunk_rows(section_lines[3:], len(headers))
+    return _build_markdown_table(headers, rows) if rows else []
+
+
+def _rewrite_known_table_sections(source_lines: list[str]) -> list[str]:
+    table_configs = {
+        "The Six Pillars at a Glance": {
+            "stop_at": "How to Use This Guide",
+            "parser": _parse_six_pillars_table,
+        },
+        "Champion vs. Coach vs. Sponsor": {
+            "stop_at": "How to Identify a Champion",
+            "parser": _parse_champion_table,
+        },
+        "Decision Process Mapping Template": {
+            "stop_at": "Red Flags",
+            "parser": _parse_decision_process_table,
+        },
+        "Scoring Rubric": {
+            "stop_at": "Score Interpretation",
+            "parser": _parse_scoring_rubric_table,
+        },
+        "Best Practices by Sales Stage": {
+            "stop_at": "Manager Coaching Reminders",
+            "parser": _parse_best_practices_table,
+        },
+    }
+
+    rewritten: list[str] = []
+    idx = 0
+    while idx < len(source_lines):
+        current_line = source_lines[idx]
+        stripped = current_line.strip()
+        config = table_configs.get(stripped)
+        if not config:
+            rewritten.append(current_line)
+            idx += 1
+            continue
+
+        stop_at = config["stop_at"]
+        stop_idx = idx + 1
+        while stop_idx < len(source_lines) and source_lines[stop_idx].strip() != stop_at:
+            stop_idx += 1
+
+        raw_section = source_lines[idx + 1 : stop_idx]
+        section_lines = [
+            line.strip()
+            for line in raw_section
+            if line.strip() and not _is_removable_page_artifact(line)
+        ]
+
+        table_lines = config["parser"](section_lines)
+        if table_lines:
+            rewritten.append(stripped)
+            rewritten.append("")
+            rewritten.extend(table_lines)
+            rewritten.append("")
+        else:
+            rewritten.append(current_line)
+            rewritten.extend(raw_section)
+
+        idx = stop_idx
+
+    return rewritten
 
 
 def _is_removable_page_artifact(line: str) -> bool:
@@ -177,9 +393,14 @@ def _remove_title_page_and_toc(lines: list[str]) -> list[str]:
     return lines[toc_index + 1 :]
 
 
+def _is_single_letter_heading(line: str) -> bool:
+    return bool(re.fullmatch(r"##\s+[A-Za-z]", line.strip()))
+
+
 def _normalize_markdown(markdown_text: str) -> str:
     """Canonicalize markdown and strip recurring page/header/footer artifacts."""
     source_lines = markdown_text.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    source_lines = _rewrite_known_table_sections(source_lines)
 
     normalized_lines: list[str] = []
     idx = 0
@@ -208,6 +429,9 @@ def _normalize_markdown(markdown_text: str) -> str:
         normalized = _canonicalize_list_prefix(line)
         if _looks_like_heading(normalized):
             normalized = f"## {normalized.rstrip(':')}"
+        if _is_single_letter_heading(normalized):
+            idx += 1
+            continue
         normalized_lines.append(normalized)
         idx += 1
 
@@ -264,6 +488,7 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
 
 
 
