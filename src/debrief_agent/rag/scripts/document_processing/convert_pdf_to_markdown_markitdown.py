@@ -35,6 +35,22 @@ HEADING_CONNECTOR_WORDS = {
     "vs",
     "with",
 }
+PAGE_ARTIFACT_REGEX = re.compile(
+    r"^(?:#+\s*)?page\s+[ivxlcdm\d]+(?:\s*(?:of|/)\s*[ivxlcdm\d]+)?\s*$",
+    re.IGNORECASE,
+)
+COPYRIGHT_LINE_REGEX = re.compile(
+    r"^(?:©|copyright)\s*\d{4}.*$",
+    re.IGNORECASE,
+)
+FOOTER_MARKER_REGEX = re.compile(
+    r"\b(?:all rights reserved|internal use only|confidential|proprietary)\b",
+    re.IGNORECASE,
+)
+ROMAN_NUMERAL_REGEX = re.compile(
+    r"^M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$",
+    re.IGNORECASE,
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -154,6 +170,11 @@ def _normalize_table_block(lines: list[str]) -> list[str]:
     for raw_line in lines:
         raw_line = raw_line.strip()
         if not raw_line:
+            continue
+
+        # Drop footer artifacts even when extraction wrapped them as table rows.
+        row_text = " ".join(cell.strip() for cell in raw_line.strip("|").split("|"))
+        if _is_removable_page_artifact(row_text):
             continue
 
         cells = [cell.strip() for cell in raw_line.strip("|").split("|")]
@@ -363,17 +384,24 @@ def _is_removable_page_artifact(line: str) -> bool:
     if re.fullmatch(r"\d+", stripped):
         return True
 
+    if ROMAN_NUMERAL_REGEX.fullmatch(stripped.upper()) and stripped:
+        return True
+
     lowered = stripped.lower()
-    if re.fullmatch(r"(?:#+\s*)?page\s+\d+", lowered):
+    if PAGE_ARTIFACT_REGEX.fullmatch(stripped):
         return True
 
-    if "salescoach ai" in lowered and "all rights reserved" in lowered:
+    # Drop line-level page counters emitted by PDF extractors.
+    if re.fullmatch(r"[ivxlcdm\d]+\s*(?:/|of)\s*[ivxlcdm\d]+", lowered):
         return True
 
-    if re.fullmatch(r"(?:#+\s*)?meddic sales methodology guide", lowered):
+    if COPYRIGHT_LINE_REGEX.fullmatch(stripped):
         return True
 
-    if "salescoach ai" in lowered and "confidential" in lowered:
+    if FOOTER_MARKER_REGEX.search(lowered) and re.search(r"\bpage\b|\d", lowered):
+        return True
+
+    if FOOTER_MARKER_REGEX.search(lowered) and "©" in stripped:
         return True
 
     return False

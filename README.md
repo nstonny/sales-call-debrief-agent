@@ -224,7 +224,7 @@ The app closes this shared client on shutdown in `src/debrief_agent/app/main.py`
 
 ### RAG Ingestion (Coaching Guides)
 
-Ingestion CLI module: `src/debrief_agent/rag/ingestion/ingest_coaching_guides.py`
+Ingestion CLI module: `src/debrief_agent/rag/ingestion/ingest_pdf_documents.py`
 
 What it does:
 - Loads `.docx` files from `src/data/knowledge_base/coaching_guides`
@@ -235,19 +235,19 @@ What it does:
 Dry-run (chunk + JSONL trace only):
 
 ```zsh
-uv run python -m debrief_agent.rag.ingestion.ingest_coaching_guides --dry-run
+uv run python -m debrief_agent.rag.ingestion.ingest_pdf_documents --dry-run
 ```
 
 Store chunks in Qdrant:
 
 ```zsh
-uv run python -m debrief_agent.rag.ingestion.ingest_coaching_guides
+uv run python -m debrief_agent.rag.ingestion.ingest_pdf_documents
 ```
 
 Optional flags:
 
 ```zsh
-uv run python -m debrief_agent.rag.ingestion.ingest_coaching_guides \
+uv run python -m debrief_agent.rag.ingestion.ingest_pdf_documents \
   --guides-path "src/data/knowledge_base/coaching_guides" \
   --trace-out "experiments.local/coaching_guides_level1_chunks.jsonl" \
   --max-chars 1200
@@ -288,14 +288,16 @@ uv run python -m debrief_agent.rag.ingestion.ingest_call_examples \
 
 ### PDF to Markdown Prep (MarkItDown)
 
-Conversion CLI module: `src/debrief_agent/rag/ingestion/convert_pdf_to_markdown_markitdown.py`
+Conversion CLI module: `src/debrief_agent/rag/scripts/document_processing/convert_pdf_to_markdown_markitdown.py`
 
 Current prep policy:
-- Keep source PDFs and converted Markdown side-by-side in each category.
-- Write converted files to nested `processed_markdown/` folders.
+- Keep source PDFs in their original category folders.
+- Write all converted markdown files to centralized `src/data/knowledge_base/processed_markdown/` directory.
   - Example mapping:
-    - `src/data/knowledge_base/sales_frameworks/MEDDIC_Sales_Guide.pdf`
-    - `src/data/knowledge_base/sales_frameworks/processed_markdown/MEDDIC_Sales_Guide.md`
+    - `src/data/knowledge_base/sales_frameworks/SPIN_Selling_Guide.pdf`
+    - `src/data/knowledge_base/processed_markdown/SPIN_Selling_Guide.md`
+    - `src/data/knowledge_base/company_playbooks/Sales_Playbook.pdf`
+    - `src/data/knowledge_base/processed_markdown/Sales_Playbook.md`
 - Use normalization profile `heading_list_table_canonical_v1` for conversion cleanup
   (headings, lists, tables, and page-artifact removal) so section-aware chunking remains stable.
 
@@ -305,10 +307,18 @@ Current cleanup behavior for converted markdown:
 - Removes copyright/footer lines (for example: `All rights reserved`).
 - Removes title-page and table-of-contents front matter, starting content at the first real section (`Introduction to MEDDIC`).
 
-Convert MEDDIC PDF to markdown (default source/target):
+Convert PDF to markdown (defaults to SPIN_Selling_Guide.pdf):
 
 ```zsh
-uv run python -m debrief_agent.rag.ingestion.convert_pdf_to_markdown_markitdown
+uv run python -m debrief_agent.rag.scripts.document_processing.convert_pdf_to_markdown_markitdown
+```
+
+Convert specific PDF:
+
+```zsh
+uv run python -m debrief_agent.rag.scripts.document_processing.convert_pdf_to_markdown_markitdown \
+  src/data/knowledge_base/company_playbooks/Sales_Playbook.pdf \
+  src/data/knowledge_base/processed_markdown/Sales_Playbook.md
 ```
 
 ### Langfuse metadata taxonomy
