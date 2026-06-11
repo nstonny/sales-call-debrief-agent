@@ -10,10 +10,10 @@ import re
 from pathlib import Path
 
 DEFAULT_SOURCE_PDF_PATH = Path(
-    "src/data/knowledge_base/sales_frameworks/MEDDIC_Sales_Guide.pdf"
+    "src/data/knowledge_base/sales_frameworks/SPIN_Selling_Guide.pdf"
 )
 DEFAULT_TARGET_MARKDOWN_PATH = Path(
-    "src/data/knowledge_base/sales_frameworks/processed_markdown/MEDDIC_Sales_Guide.md"
+    "src/data/knowledge_base/processed_markdown/SPIN_Selling_Guide.md"
 )
 DEFAULT_NORMALIZATION_PROFILE = "heading_list_table_canonical_v1"
 HEADING_CONNECTOR_WORDS = {
@@ -43,13 +43,27 @@ def build_parser() -> argparse.ArgumentParser:
         description="Convert a knowledge-base PDF to markdown with normalization."
     )
     parser.add_argument(
+        "source_pdf_path",
+        nargs="?",
+        type=Path,
+        help="Path to input PDF.",
+    )
+    parser.add_argument(
+        "target_markdown_path",
+        nargs="?",
+        type=Path,
+        help="Path to output markdown file.",
+    )
+    parser.add_argument(
         "--source-pdf",
+        dest="source_pdf_flag",
         type=Path,
         default=DEFAULT_SOURCE_PDF_PATH,
         help="Path to input PDF.",
     )
     parser.add_argument(
         "--target-markdown",
+        dest="target_markdown_flag",
         type=Path,
         default=DEFAULT_TARGET_MARKDOWN_PATH,
         help="Path to output markdown file.",
@@ -120,7 +134,7 @@ def _canonicalize_list_prefix(line: str) -> str:
         return ""
 
     # Normalize common PDF extraction bullet artifacts.
-    artifact_bullet_match = re.match(r"^(?:\(cid:127\)|ﬁ|n)\s+(.+)$", stripped)
+    artifact_bullet_match = re.match(r"^(?:\(cid:127\)|ﬁ|fi|n)\s+(.+)$", stripped)
     if artifact_bullet_match:
         return f"- {artifact_bullet_match.group(1).strip()}"
 
@@ -367,8 +381,41 @@ def _is_removable_page_artifact(line: str) -> bool:
 
 def _remove_title_page_and_toc(lines: list[str]) -> list[str]:
     """Drop front-matter title page and TOC when present."""
+
     def _normalized_heading_text(value: str) -> str:
         return re.sub(r"^#+\s*", "", value.strip()).lower()
+
+    def _strip_toc_page_number(value: str) -> str:
+        return re.sub(r"\s+\d+\s*$", "", value).strip()
+
+    def _is_toc_heading_line(value: str) -> bool:
+        text = _normalized_heading_text(value)
+        return bool(text) and bool(re.fullmatch(r".+\s+\d+", text))
+
+    def _strip_leading_toc_block(start_idx: int) -> list[str] | None:
+        idx = start_idx
+        while idx < len(lines) and not lines[idx].strip():
+            idx += 1
+
+        toc_start = idx
+        while idx < len(lines) and _is_toc_heading_line(lines[idx]):
+            idx += 1
+
+        toc_block = lines[toc_start:idx]
+        if len(toc_block) < 3:
+            return None
+
+        toc_titles = [
+            _strip_toc_page_number(_normalized_heading_text(line)) for line in toc_block
+        ]
+        first_title = toc_titles[0]
+
+        for search_idx in range(idx, len(lines)):
+            candidate = _strip_toc_page_number(_normalized_heading_text(lines[search_idx]))
+            if candidate == first_title:
+                return lines[search_idx:]
+
+        return None
 
     toc_index = next(
         (
@@ -379,6 +426,9 @@ def _remove_title_page_and_toc(lines: list[str]) -> list[str]:
         None,
     )
     if toc_index is None:
+        stripped = _strip_leading_toc_block(start_idx=0)
+        if stripped is not None:
+            return stripped
         return lines
 
     for idx in range(toc_index + 1, len(lines)):
@@ -388,6 +438,10 @@ def _remove_title_page_and_toc(lines: list[str]) -> list[str]:
         window = " ".join(lines[idx + 1 : idx + 8])
         if "MEDDIC is a battle-tested" in window:
             return lines[idx:]
+
+    stripped = _strip_leading_toc_block(start_idx=toc_index + 1)
+    if stripped is not None:
+        return stripped
 
     # Fallback: remove everything through TOC marker.
     return lines[toc_index + 1 :]
@@ -479,9 +533,13 @@ def run_conversion(
 def main() -> None:
     """Parse args and run conversion."""
     args = build_parser().parse_args()
+
+    source_pdf_path = args.source_pdf_path or args.source_pdf_flag
+    target_markdown_path = args.target_markdown_path or args.target_markdown_flag
+
     run_conversion(
-        source_pdf_path=args.source_pdf,
-        target_markdown_path=args.target_markdown,
+        source_pdf_path=source_pdf_path,
+        target_markdown_path=target_markdown_path,
         normalization_profile=args.normalization_profile,
     )
 
