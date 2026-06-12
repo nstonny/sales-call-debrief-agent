@@ -10,10 +10,10 @@ import re
 from pathlib import Path
 
 DEFAULT_SOURCE_PDF_PATH = Path(
-    "src/data/knowledge_base/sales_frameworks/SPIN_Selling_Guide.pdf"
+    "src/data/knowledge_base/company_playbooks/Sales_Playbook.pdf"
 )
 DEFAULT_TARGET_MARKDOWN_PATH = Path(
-    "src/data/knowledge_base/processed_markdown/SPIN_Selling_Guide.md"
+    "src/data/knowledge_base/processed_markdown/Sales_Playbook.md"
 )
 DEFAULT_NORMALIZATION_PROFILE = "heading_list_table_canonical_v1"
 HEADING_CONNECTOR_WORDS = {
@@ -219,23 +219,50 @@ def _split_line_once(line: str, split_regex: str) -> list[str]:
 
 
 def _parse_six_pillars_table(section_lines: list[str]) -> list[str]:
+    """Parse The Six Pillars at a Glance into table format.
+
+    Expected pattern in section_lines:
+    - Lines alternate between MEDDIC element names and their core questions
+    - Single letter indicators (M, E, D, D, I, C) may or may not be present
+    """
     headers = ["Letter", "Element", "Core Question"]
-    if section_lines[:3] != headers:
-        return []
 
-    remaining = section_lines[3:]
-    first_column: list[str] = []
-    while remaining and re.fullmatch(r"[A-Za-z]{1,2}", remaining[0]):
-        first_column.append(remaining.pop(0))
-
-    if not first_column or len(remaining) != 2 * len(first_column):
-        return []
-
-    rows = [
-        [first_column[idx], remaining[2 * idx], remaining[2 * idx + 1]]
-        for idx in range(len(first_column))
+    # Define the expected MEDDIC elements in order
+    meddic_elements = [
+        ("M", "Metrics"),
+        ("E", "Economic Buyer"),
+        ("D", "Decision Criteria"),
+        ("D", "Decision Process"),
+        ("I", "Identify Pain"),
+        ("C", "Champion"),
     ]
-    return _build_markdown_table(headers, rows)
+
+    rows: list[list[str]] = []
+    i = 0
+    element_idx = 0
+
+    while i < len(section_lines) and element_idx < len(meddic_elements):
+        line = section_lines[i].strip()
+        letter, element = meddic_elements[element_idx]
+
+        # Check if current line matches expected element
+        if element.lower() in line.lower() or line == element:
+            # Next line should be the core question
+            if i + 1 < len(section_lines):
+                question = section_lines[i + 1].strip()
+                rows.append([letter, element, question])
+                i += 2
+                element_idx += 1
+            else:
+                i += 1
+        else:
+            i += 1
+
+    # Only return table if we found all 6 MEDDIC elements
+    if len(rows) == 6:
+        return _build_markdown_table(headers, rows)
+
+    return []
 
 
 def _parse_champion_table(section_lines: list[str]) -> list[str]:
@@ -314,15 +341,513 @@ def _parse_best_practices_table(section_lines: list[str]) -> list[str]:
     return _build_markdown_table(headers, rows) if rows else []
 
 
+def _parse_types_of_metrics_table(section_lines: list[str]) -> list[str]:
+    """Parse 'Types of Metrics to Uncover' section into table format."""
+    headers = ["Type", "Examples"]
+    rows: list[list[str]] = []
+
+    i = 0
+    while i < len(section_lines):
+        line = section_lines[i].strip()
+        # Check if this looks like a category heading
+        if line and not line.endswith('.') and len(line) < 50 and i + 1 < len(section_lines):
+            category = line
+            i += 1
+            examples = section_lines[i].strip() if i < len(section_lines) else ""
+            if examples:
+                rows.append([category, examples])
+        i += 1
+
+    return _build_markdown_table(headers, rows) if rows else []
+
+
+def _parse_strategies_table(section_lines: list[str]) -> list[str]:
+    """Parse 'Strategies to Gain EB Access' section into table format."""
+    headers = ["Strategy", "Description"]
+    rows: list[list[str]] = []
+
+    i = 0
+    while i < len(section_lines):
+        line = section_lines[i].strip()
+        # Check if this looks like a strategy heading
+        if line and not line.endswith('.') and len(line) < 50 and i + 1 < len(section_lines):
+            strategy = line
+            i += 1
+            description = section_lines[i].strip() if i < len(section_lines) else ""
+            if description:
+                rows.append([strategy, description])
+        i += 1
+
+    return _build_markdown_table(headers, rows) if rows else []
+
+
+def _parse_categories_of_decision_criteria_table(section_lines: list[str]) -> list[str]:
+    """Parse 'Categories of Decision Criteria' section into table format."""
+    headers = ["Category", "Examples"]
+    rows: list[list[str]] = []
+
+    i = 0
+    while i < len(section_lines):
+        line = section_lines[i].strip()
+        # Check if this looks like a category heading
+        if line and not line.endswith('.') and len(line) < 50 and i + 1 < len(section_lines):
+            category = line
+            i += 1
+            examples = section_lines[i].strip() if i < len(section_lines) else ""
+            if examples:
+                rows.append([category, examples])
+        i += 1
+
+    return _build_markdown_table(headers, rows) if rows else []
+
+
+def _parse_levels_of_pain_table(section_lines: list[str]) -> list[str]:
+    """Parse 'Levels of Pain' section into table format."""
+    headers = ["Level", "Description"]
+    rows: list[list[str]] = []
+
+    i = 0
+    while i < len(section_lines):
+        line = section_lines[i].strip()
+        # Check if line starts with "Level" pattern
+        if line.startswith("Level ") and "—" in line and i < len(section_lines):
+            level_desc = line.split("—", 1)
+            if len(level_desc) == 2:
+                i += 1
+                description = section_lines[i].strip() if i < len(section_lines) else level_desc[1].strip()
+                rows.append([level_desc[0].strip(), description])
+        i += 1
+
+    return _build_markdown_table(headers, rows) if rows else []
+
+
+def _parse_how_to_develop_champion_table(section_lines: list[str]) -> list[str]:
+    """Parse 'How to Develop a Champion' section into table format."""
+    headers = ["Action", "Description"]
+    rows: list[list[str]] = []
+
+    i = 0
+    while i < len(section_lines):
+        line = section_lines[i].strip()
+        # Check if this looks like an action heading
+        if line and not line.endswith('.') and len(line) < 50 and i + 1 < len(section_lines):
+            action = line
+            i += 1
+            description = section_lines[i].strip() if i < len(section_lines) else ""
+            if description:
+                rows.append([action, description])
+        i += 1
+
+    return _build_markdown_table(headers, rows) if rows else []
+
+
+def _parse_score_interpretation_table(section_lines: list[str]) -> list[str]:
+    """Parse 'Score Interpretation' section into table format."""
+    headers = ["Score Range", "Symbol", "Category", "Action"]
+    rows: list[list[str]] = []
+
+    i = 0
+    while i < len(section_lines):
+        line = section_lines[i].strip()
+        # Parse lines like "10–12  ✓  Commit"
+        parts = line.split()
+        if len(parts) >= 3 and ("–" in parts[0] or "-" in parts[0]):
+            score_range = parts[0]
+            symbol = parts[1]
+            category = parts[2]
+            i += 1
+            action = section_lines[i].strip() if i < len(section_lines) else ""
+            if action:
+                rows.append([score_range, symbol, category, action])
+        i += 1
+
+    return _build_markdown_table(headers, rows) if rows else []
+
+
+def _parse_common_failures_table(section_lines: list[str]) -> list[str]:
+    """Parse 'The 7 Most Common MEDDIC Failures' section into table format."""
+    headers = ["#", "Failure", "Solution"]
+    rows: list[list[str]] = []
+
+    i = 0
+    while i < len(section_lines):
+        line = section_lines[i].strip()
+        # Parse lines like "#1  Single-threading"
+        if line.startswith("#") and len(line) > 2:
+            parts = line.split(None, 1)
+            if len(parts) == 2:
+                number = parts[0]
+                failure = parts[1]
+                i += 1
+                solution = section_lines[i].strip() if i < len(section_lines) else ""
+                if solution:
+                    rows.append([number, failure, solution])
+        i += 1
+
+    return _build_markdown_table(headers, rows) if rows else []
+
+
+def _parse_example_situation_questions_table(section_lines: list[str]) -> list[str]:
+    """Parse 'Example Situation Questions' section for SPIN guide.
+
+    Format: Each line is "Context Question text here?"
+    Example: "Context How many people are currently in your sales organisation?"
+    """
+    headers = ["Context", "Question"]
+    rows: list[list[str]] = []
+
+    for line in section_lines:
+        line = line.strip()
+        if not line or not line.endswith('?'):
+            continue
+
+        # Split on first question word
+        for question_start in ['What ', 'How ', 'Who ', 'Where ', 'When ', 'Which ', 'Roughly ']:
+            if question_start in line:
+                parts = line.split(question_start, 1)
+                if len(parts) == 2:
+                    context = parts[0].strip()
+                    question = question_start.strip() + ' ' + parts[1].strip()
+                    if context and question:
+                        rows.append([context, question])
+                    break
+
+    return _build_markdown_table(headers, rows) if rows else []
+
+
+def _parse_example_problem_questions_table(section_lines: list[str]) -> list[str]:
+    """Parse 'Example Problem Questions' section for SPIN guide.
+
+    Format: Each line is "PainArea Question text here?"
+    """
+    headers = ["Pain Area", "Example Problem Question"]
+    rows: list[list[str]] = []
+
+    for line in section_lines:
+        line = line.strip()
+        if not line or not line.endswith('?'):
+            continue
+
+        # Split on first question word
+        for question_start in ['How ', 'What ', 'Are ', 'Do ', 'Does ', 'Is ', 'Have ', 'Can ']:
+            if question_start in line:
+                parts = line.split(question_start, 1)
+                if len(parts) == 2:
+                    pain_area = parts[0].strip()
+                    question = question_start.strip() + ' ' + parts[1].strip()
+                    # Filter out lines that are headers or don't look like pain areas
+                    if pain_area and question and len(pain_area.split()) <= 4:
+                        rows.append([pain_area, question])
+                    break
+
+    return _build_markdown_table(headers, rows) if rows else []
+
+
+def _parse_how_implication_questions_work_table(section_lines: list[str]) -> list[str]:
+    """Parse 'How Implication Questions Work' section for SPIN guide."""
+    headers = ["Stage", "Question/Impact"]
+    rows: list[list[str]] = []
+
+    # Expected sequence: Problem identified, Implication #1, Implication #2, Implication #3, Effect on buyer
+    stage_markers = [
+        "Problem identified",
+        "Implication #1",
+        "Implication #2",
+        "Implication #3",
+        "Effect on buyer"
+    ]
+
+    i = 0
+    while i < len(section_lines):
+        line = section_lines[i].strip()
+        # Check if line matches any stage marker
+        for marker in stage_markers:
+            if marker.lower() in line.lower():
+                # Extract the content after the marker
+                if marker in line:
+                    content = line.replace(marker, "").strip()
+                    rows.append([marker, content])
+                elif i + 1 < len(section_lines):
+                    i += 1
+                    content = section_lines[i].strip()
+                    rows.append([marker, content])
+                break
+        i += 1
+
+    return _build_markdown_table(headers, rows) if rows and len(rows) >= 4 else []
+
+
+def _parse_example_need_payoff_questions_table(section_lines: list[str]) -> list[str]:
+    """Parse 'Example Need-Payoff Questions' section for SPIN guide.
+
+    Format: Each line is "PainContext Question text here?"
+    Example: "Ramp time If you could cut ramp time in half, how would..."
+    """
+    headers = ["After Pain Established", "Example Need-Payoff Question"]
+    rows: list[list[str]] = []
+
+    for line in section_lines:
+        line = line.strip()
+        if not line or not line.endswith('?'):
+            continue
+
+        # Split on first question word (typically "If", "How", "What")
+        for question_start in ['If ', 'How ', 'What ', 'Would ', 'Could ']:
+            if question_start in line:
+                parts = line.split(question_start, 1)
+                if len(parts) == 2:
+                    pain_context = parts[0].strip()
+                    question = question_start.strip() + ' ' + parts[1].strip()
+                    # Filter out lines that don't look like pain contexts
+                    if pain_context and question and len(pain_context.split()) <= 4:
+                        rows.append([pain_context, question])
+                    break
+
+    return _build_markdown_table(headers, rows) if rows else []
+
+
+def _parse_spin_common_mistakes_table(section_lines: list[str]) -> list[str]:
+    """Parse 'The 8 Most Common SPIN Mistakes' section.
+
+    Format: "#1 Mistake name Rest of description with Fix: advice"
+    Example: "#1 Skipping straight to the pitch Sellers present...Fix: hold solution..."
+    """
+    headers = ["#", "Mistake", "Description & Fix"]
+    rows: list[list[str]] = []
+
+    for line in section_lines:
+        line = line.strip()
+        # Parse lines like "#1 Skipping straight to the pitch Sellers..."
+        if not line.startswith("#") or len(line) < 5:
+            continue
+
+        # Extract number
+        parts = line.split(None, 1)
+        if len(parts) < 2:
+            continue
+
+        number = parts[0]
+        rest = parts[1]
+
+        # Find where description starts (look for capital letter after lowercase or "Fix:")
+        # Typically mistake is 2-5 words, then description starts
+        words = rest.split()
+        mistake_end_idx = 1
+
+        # Look for clues where description starts
+        for i in range(1, min(6, len(words))):
+            word = words[i]
+            # Description typically starts with a capital letter verb (Sellers, Asking, Showing, etc.)
+            if i > 1 and word[0].isupper() and words[i-1][-1].islower():
+                mistake_end_idx = i
+                break
+
+        mistake = ' '.join(words[:mistake_end_idx])
+        description = ' '.join(words[mistake_end_idx:]) if mistake_end_idx < len(words) else ""
+
+        if mistake and description:
+            rows.append([number, mistake, description])
+
+    return _build_markdown_table(headers, rows) if rows else []
+
+
+def _parse_what_we_sell_table(section_lines: list[str]) -> list[str]:
+    """Parse 'What We Sell' section for Sales Playbook.
+
+    Format: "Product Description of the product..."
+    """
+    headers = ["Product", "Description"]
+    rows: list[list[str]] = []
+
+    for line in section_lines:
+        line = line.strip()
+        if not line:
+            continue
+
+        # Known product names to look for
+        products = ["Core Platform", "Accelerator", "Coaching Studio", "Professional Svcs"]
+
+        for product in products:
+            if line.startswith(product):
+                description = line[len(product):].strip()
+                if description:
+                    rows.append([product, description])
+                break
+
+    return _build_markdown_table(headers, rows) if rows else []
+
+
+def _parse_primary_icp_table(section_lines: list[str]) -> list[str]:
+    """Parse 'Primary ICP' section for Sales Playbook.
+
+    Format: "Dimension Description of the dimension..."
+    """
+    headers = ["Dimension", "Description"]
+    rows: list[list[str]] = []
+
+    for line in section_lines:
+        line = line.strip()
+        if not line:
+            continue
+
+        # Known ICP dimensions
+        dimensions = ["Company Size", "Revenue", "Sales Org Size", "Segment",
+                     "Geography", "Sales Motion", "Tech Stack", "Pain Triggers"]
+
+        for dimension in dimensions:
+            if line.startswith(dimension):
+                description = line[len(dimension):].strip()
+                if description:
+                    rows.append([dimension, description])
+                break
+
+    return _build_markdown_table(headers, rows) if rows else []
+
+
+def _parse_meddic_acme_context_table(section_lines: list[str]) -> list[str]:
+    """Parse 'MEDDIC in the Acme Context' section for Sales Playbook.
+
+    Format: "Element Description specific to Acme..."
+    """
+    headers = ["MEDDIC Element", "Acme Context"]
+    rows_by_element: dict[str, str] = {}
+
+    for line in section_lines:
+        line = line.strip()
+        if not line:
+            continue
+
+        # MEDDIC elements
+        elements = ["Metrics", "Economic Buyer", "Decision Criteria",
+                   "Decision Process", "Identify Pain", "Champion"]
+
+        for element in elements:
+            if not line.startswith(element):
+                continue
+
+            # Keep the first complete row per MEDDIC element and skip repeats.
+            if element in rows_by_element:
+                break
+
+            context = line[len(element):].strip()
+            if context:
+                rows_by_element[element] = context
+            break
+
+    rows = [[element, rows_by_element[element]] for element in elements if element in rows_by_element]
+    return _build_markdown_table(headers, rows) if rows else []
+
+
+def _parse_discounting_guidelines_table(section_lines: list[str]) -> list[str]:
+    """Parse 'Discounting Guidelines' section for Sales Playbook.
+
+    Format: "Range Description and approval requirements..."
+    """
+    headers = ["Discount Range", "Approval & Guidelines"]
+    rows: list[list[str]] = []
+
+    for line in section_lines:
+        line = line.strip()
+        if not line:
+            continue
+
+        # Discount ranges
+        ranges = ["Up to 10%", "10–20%", "20–30%", "> 30%"]
+
+        for discount_range in ranges:
+            if line.startswith(discount_range):
+                guidelines = line[len(discount_range):].strip()
+                if guidelines:
+                    rows.append([discount_range, guidelines])
+                break
+
+    return _build_markdown_table(headers, rows) if rows else []
+
+
+def _parse_mutual_close_plan_table(section_lines: list[str]) -> list[str]:
+    """Parse 'The Mutual Close Plan' section for Sales Playbook.
+
+    Format: "Component Description of what it contains..."
+    """
+    headers = ["Component", "Description"]
+    rows: list[list[str]] = []
+
+    for line in section_lines:
+        line = line.strip()
+        if not line:
+            continue
+
+        # MCP components
+        components = ["Goal State", "Milestones", "Dependencies",
+                     "Success Metrics", "Escalation Path"]
+
+        for component in components:
+            if line.startswith(component):
+                description = line[len(component):].strip()
+                if description:
+                    rows.append([component, description])
+                break
+
+    return _build_markdown_table(headers, rows) if rows else []
+
+
+def _parse_compensation_structure_table(section_lines: list[str]) -> list[str]:
+    """Parse 'Compensation Structure Overview' section for Sales Playbook.
+
+    Format: "Component Description of compensation element..."
+    """
+    headers = ["Component", "Details"]
+    rows: list[list[str]] = []
+
+    for line in section_lines:
+        line = line.strip()
+        if not line:
+            continue
+
+        # Compensation components
+        components = ["Base / Variable", "Accelerators", "Multi-year deals",
+                     "SPIFs", "Clawbacks", "Ramp", "Commission", "Processing"]
+
+        for component in components:
+            if line.startswith(component):
+                details = line[len(component):].strip()
+                if details:
+                    rows.append([component, details])
+                break
+
+    return _build_markdown_table(headers, rows) if rows else []
+
+
 def _rewrite_known_table_sections(source_lines: list[str]) -> list[str]:
     table_configs = {
+        # MEDDIC Guide tables
         "The Six Pillars at a Glance": {
             "stop_at": "How to Use This Guide",
             "parser": _parse_six_pillars_table,
         },
+        "Types of Metrics to Uncover": {
+            "stop_at": "Discovery Questions",
+            "parser": _parse_types_of_metrics_table,
+        },
+        "Strategies to Gain EB Access": {
+            "stop_at": "Red Flags",
+            "parser": _parse_strategies_table,
+        },
+        "Categories of Decision Criteria": {
+            "stop_at": "Discovery Questions",
+            "parser": _parse_categories_of_decision_criteria_table,
+        },
+        "Levels of Pain": {
+            "stop_at": "Pain vs. Problem vs. Implication",
+            "parser": _parse_levels_of_pain_table,
+        },
         "Champion vs. Coach vs. Sponsor": {
             "stop_at": "How to Identify a Champion",
             "parser": _parse_champion_table,
+        },
+        "How to Develop a Champion": {
+            "stop_at": "Champion Testing Questions",
+            "parser": _parse_how_to_develop_champion_table,
         },
         "Decision Process Mapping Template": {
             "stop_at": "Red Flags",
@@ -332,9 +857,63 @@ def _rewrite_known_table_sections(source_lines: list[str]) -> list[str]:
             "stop_at": "Score Interpretation",
             "parser": _parse_scoring_rubric_table,
         },
+        "Score Interpretation": {
+            "stop_at": "Deal Review Agenda Template",
+            "parser": _parse_score_interpretation_table,
+        },
+        "The 7 Most Common MEDDIC Failures": {
+            "stop_at": "Best Practices by Sales Stage",
+            "parser": _parse_common_failures_table,
+        },
         "Best Practices by Sales Stage": {
             "stop_at": "Manager Coaching Reminders",
             "parser": _parse_best_practices_table,
+        },
+        # SPIN Guide tables
+        "Example Situation Questions": {
+            "stop_at": "Golden Rules for Situation Questions",
+            "parser": _parse_example_situation_questions_table,
+        },
+        "Example Problem Questions": {
+            "stop_at": "Crafting Strong Problem Questions",
+            "parser": _parse_example_problem_questions_table,
+        },
+        "How Implication Questions Work": {
+            "stop_at": "Example Implication Questions",
+            "parser": _parse_how_implication_questions_work_table,
+        },
+        "Example Need-Payoff Questions": {
+            "stop_at": "The Buyer-Articulation Principle",
+            "parser": _parse_example_need_payoff_questions_table,
+        },
+        "The 8 Most Common SPIN Mistakes": {
+            "stop_at": "Coaching Best Practices by Role",
+            "parser": _parse_spin_common_mistakes_table,
+        },
+        # Sales Playbook tables
+        "What We Sell": {
+            "stop_at": "Our Positioning",
+            "parser": _parse_what_we_sell_table,
+        },
+        "Primary ICP": {
+            "stop_at": "Buyer Personas",
+            "parser": _parse_primary_icp_table,
+        },
+        "MEDDIC in the Acme Context": {
+            "stop_at": "Discovery Question Bank",
+            "parser": _parse_meddic_acme_context_table,
+        },
+        "Discounting Guidelines": {
+            "stop_at": "Proposal Best Practices",
+            "parser": _parse_discounting_guidelines_table,
+        },
+        "The Mutual Close Plan": {
+            "stop_at": "Negotiation Principles",
+            "parser": _parse_mutual_close_plan_table,
+        },
+        "Compensation Structure Overview": {
+            "stop_at": "Onboarding & Ramp Expectations",
+            "parser": _parse_compensation_structure_table,
         },
     }
 
@@ -402,6 +981,10 @@ def _is_removable_page_artifact(line: str) -> bool:
         return True
 
     if FOOTER_MARKER_REGEX.search(lowered) and "©" in stripped:
+        return True
+
+    # Drop repeated guide title footer artifacts
+    if "meddic sales methodology guide" in lowered or "salescoach ai" in lowered:
         return True
 
     return False

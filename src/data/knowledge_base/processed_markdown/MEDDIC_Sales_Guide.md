@@ -67,25 +67,13 @@ prospect define and own those numbers.
 
 ## Types of Metrics to Uncover
 
-## Revenue Impact
-
-Increase in ARR, upsell/cross-sell uplift, new market capture.
-
-## Cost Reduction
-
-Headcount savings, infrastructure cost cuts, rework elimination.
-
-## Productivity Gain
-
-Hours saved per week, cycle time reduction, throughput increase.
-
-## Risk Reduction
-
-Compliance fines avoided, churn reduction, downtime prevented.
-
-## Time-to-Value
-
-Days to onboard, speed to first outcome, deployment timeline.
+| Type | Examples |
+| --- | --- |
+| Revenue Impact | Increase in ARR, upsell/cross-sell uplift, new market capture. |
+| Cost Reduction | Headcount savings, infrastructure cost cuts, rework elimination. |
+| Productivity Gain | Hours saved per week, cycle time reduction, throughput increase. |
+| Risk Reduction | Compliance fines avoided, churn reduction, downtime prevented. |
+| Time-to-Value | Days to onboard, speed to first outcome, deployment timeline. |
 
 ## Discovery Questions
 
@@ -147,25 +135,13 @@ highest-leverage actions in any enterprise deal.
 
 ## Strategies to Gain EB Access
 
-## Executive Sponsor
-
-Engage your own exec to reach out peer-to-peer.
-
-## Champion Request
-
-Coach your champion to facilitate an intro: 'Would it make sense to loop in [EB]?'
-
-## Business Review
-
-Propose an executive business review framed around their strategic goals.
-
-## Event / EBC
-
-Invite the EB to an executive briefing centre or industry event.
-
-## Inbound Content
-
-Share a relevant thought-leadership piece attributed to their priorities.
+| Strategy | Description |
+| --- | --- |
+| Executive Sponsor | Engage your own exec to reach out peer-to-peer. |
+| Champion Request | Coach your champion to facilitate an intro: 'Would it make sense to loop in [EB]?' |
+| Business Review | Propose an executive business review framed around their strategic goals. |
+| Event / EBC | Invite the EB to an executive briefing centre or industry event. |
+| Inbound Content | Share a relevant thought-leadership piece attributed to their priorities. |
 
 ## Red Flags
 
@@ -187,25 +163,13 @@ to their strengths — wins more often.
 
 ## Categories of Decision Criteria
 
-## Technical
-
-Integration capabilities, security posture, scalability, compliance certifications.
-
-## Commercial
-
-Pricing model, contract flexibility, total cost of ownership, payment terms.
-
-## Vendor
-
-Company stability, customer references, industry expertise, roadmap alignment.
-
-## Implementation
-
-Time to deploy, professional services, training, change management support.
-
-## Cultural
-
-Relationship quality, executive alignment, responsiveness, shared values.
+| Category | Examples |
+| --- | --- |
+| Technical | Integration capabilities, security posture, scalability, compliance certifications. |
+| Commercial | Pricing model, contract flexibility, total cost of ownership, payment terms. |
+| Vendor | Company stability, customer references, industry expertise, roadmap alignment. |
+| Implementation | Time to deploy, professional services, training, change management support. |
+| Cultural | Relationship quality, executive alignment, responsiveness, shared values. |
 
 ## Discovery Questions
 
@@ -304,21 +268,12 @@ prospects articulate it, quantify it, and feel the cost of inaction.
 
 ## Levels of Pain
 
-## Level 1 — Latent
-
-Prospect has a problem but hasn't fully recognised it. You must reveal it.
-
-## Level 2 — Active
-
-Prospect knows the problem exists but hasn't prioritised solving it.
-
-## Level 3 — Vision
-
-Prospect has a clear vision of the solution and is actively evaluating vendors.
-
-## Level 4 — Crisis
-
-The problem is causing immediate, quantifiable damage. Urgency is high.
+| Level | Description |
+| --- | --- |
+| Level 1 | Prospect has a problem but hasn't fully recognised it. You must reveal it. |
+| Level 2 | Prospect knows the problem exists but hasn't prioritised solving it. |
+| Level 3 | Prospect has a clear vision of the solution and is actively evaluating vendors. |
+| Level 4 | The problem is causing immediate, quantifiable damage. Urgency is high. |
 
 ## Pain vs. Problem vs. Implication
 
@@ -391,29 +346,14 @@ most common reason enterprise deals stall or are lost.
 
 ## How to Develop a Champion
 
-## Invest in Their Success
-
-Understand their personal goals and how this project helps them.
-
-## Share Your Intel
-
-Give them information and insights that make them look smart internally.
-
-## Coach Them to Sell
-
-Prepare them for internal presentations — give them slides, talk tracks.
-
-## Create a Joint Plan
-
-Build a mutual success plan they co-own and can present upward.
-
-## Test Their Commitment
-
-Ask them to do something: get you a meeting, share a document.
-
-## Maintain Frequency
-
-Regular touchpoints keep you informed and the deal alive.
+| Action | Description |
+| --- | --- |
+| Invest in Their Success | Understand their personal goals and how this project helps them. |
+| Share Your Intel | Give them information and insights that make them look smart internally. |
+| Coach Them to Sell | Prepare them for internal presentations — give them slides, talk tracks. |
+| Create a Joint Plan | Build a mutual success plan they co-own and can present upward. |
+| Test Their Commitment | Ask them to do something: get you a meeting, share a document. |
+| Maintain Frequency | Regular touchpoints keep you informed and the deal alive. |
 
 ## Champion Testing Questions
 
@@ -448,21 +388,12 @@ create accurate forecasts. Score each element 0–2 and total the result.
 
 ## Score Interpretation
 
-## 10–12  3  Commit
-
-Strong qualification. High confidence to forecast. Focus on process and timeline.
-
-## 7–9    ~  Upside
-
-Solid deal with identifiable gaps. Prioritise closing the 1–2 missing elements.
-
-## 4–6    ?  Best Case
-
-Meaningful gaps exist. Do not forecast without a recovery plan for weak areas.
-
-## 0–3    7  Qualify Out
-
-Poorly qualified. Reassign resources or re-enter at an earlier stage.
+| Score Range | Symbol | Category | Action |
+| --- | --- | --- | --- |
+| 10–12 | 3 | Commit | Strong qualification. High confidence to forecast. Focus on process and timeline. |
+| 7–9 | ~ | Upside | Solid deal with identifiable gaps. Prioritise closing the 1–2 missing elements. |
+| 4–6 | ? | Best | Meaningful gaps exist. Do not forecast without a recovery plan for weak areas. |
+| 0–3 | 7 | Qualify | Poorly qualified. Reassign resources or re-enter at an earlier stage. |
 
 ## Deal Review Agenda Template
 
@@ -550,33 +481,15 @@ sessions and self-assessments to identify and fix the most common failure patter
 
 ## The 7 Most Common MEDDIC Failures
 
-#1  Single-threading
-
-Relying on one contact. Build multi-threaded relationships across functions.
-
-#2  Skipping the EB
-
-Never meeting the Economic Buyer. No EB contact = no commit forecast.
-
-#3  Wishful pain
-
-Accepting vague pain without quantifying it. Always push for numbers.
-
-#4  False champion
-
-Mistaking a friendly contact for a true champion. Test commitment early.
-
-#5  Unknown process
-
-Not knowing the internal steps. Map every deal past Stage 2.
-
-#6  Rep-owned ROI
-
-The rep builds the business case alone. Co-create it with the champion.
-
-#7  Late-stage surprises
-
-Security review, legal, or board approval surfaces at the last minute.
+| # | Failure | Solution |
+| --- | --- | --- |
+| #1 | Single-threading | Relying on one contact. Build multi-threaded relationships across functions. |
+| #2 | Skipping the EB | Never meeting the Economic Buyer. No EB contact = no commit forecast. |
+| #3 | Wishful pain | Accepting vague pain without quantifying it. Always push for numbers. |
+| #4 | False champion | Mistaking a friendly contact for a true champion. Test commitment early. |
+| #5 | Unknown process | Not knowing the internal steps. Map every deal past Stage 2. |
+| #6 | Rep-owned ROI | The rep builds the business case alone. Co-create it with the champion. |
+| #7 | Late-stage surprises | Security review, legal, or board approval surfaces at the last minute. |
 
 ## Best Practices by Sales Stage
 
@@ -613,5 +526,4 @@ I know the pain? Do I have a champion? Do I have access to the EB? If any answer
 
 is no — that is your next action.
 
-This guide is a training resource produced by SalesCoach AI. For questions or feedback, contact your enablement
 team. Version 2.0 · 2025.
