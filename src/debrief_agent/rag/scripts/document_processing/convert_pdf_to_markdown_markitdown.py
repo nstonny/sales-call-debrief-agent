@@ -1,6 +1,7 @@
 """Convert one PDF file to markdown using MarkItDown with normalization.
 
-Default paths target MEDDIC conversion into nested processed_markdown.
+Default paths target Sales_Playbook conversion into company_playbooks.
+Sales-framework PDFs (SPIN, MEDDIC) should target sales_frameworks/.
 """
 
 
@@ -13,7 +14,7 @@ DEFAULT_SOURCE_PDF_PATH = Path(
     "src/data/knowledge_base/company_playbooks/Sales_Playbook.pdf"
 )
 DEFAULT_TARGET_MARKDOWN_PATH = Path(
-    "src/data/knowledge_base/processed_markdown/Sales_Playbook.md"
+    "src/data/knowledge_base/company_playbooks/Sales_Playbook.md"
 )
 DEFAULT_NORMALIZATION_PROFILE = "heading_list_table_canonical_v1"
 HEADING_CONNECTOR_WORDS = {

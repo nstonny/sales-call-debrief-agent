@@ -1,7 +1,7 @@
 """CLI ingestion entrypoint for markdown file chunking and optional Qdrant upsert.
 
 This script:
-1) loads markdown files from `processed_markdown`,
+1) loads markdown files from `sales_frameworks` (or any directory passed via CLI),
 2) performs structure-aware chunking,
 3) writes a JSONL trace artifact for review,
 4) optionally stores chunks in Qdrant.
@@ -13,8 +13,8 @@ from pathlib import Path
 from debrief_agent.app.bootstrap_qdrant import ensure_collection
 from debrief_agent.rag.splitters import PDFChunker
 
-DEFAULT_PROCESSED_MARKDOWN_PATH = Path("src/data/knowledge_base/processed_markdown")
-DEFAULT_TRACE_PATH = Path("experiments.local/pdf_chunks_trace.jsonl")
+DEFAULT_PROCESSED_MARKDOWN_PATH = Path("src/data/knowledge_base/sales_frameworks")
+DEFAULT_PROCESSED_MARKDOWN_PATH = Path("src/data/knowledge_base/sales_frameworks")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -26,7 +26,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--processed-markdown-path",
         type=Path,
         default=DEFAULT_PROCESSED_MARKDOWN_PATH,
-        help="Path to the processed_markdown directory.",
+        help="Path to the directory containing markdown files to ingest (default: sales_frameworks).",
     )
     parser.add_argument(
         "--trace-out",

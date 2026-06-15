@@ -27,6 +27,7 @@ def retrieve_sales_frameworks(query: str) -> str:
     Retrieve MEDDIC, SPIN, Challenger, discovery,
     qualification and objection handling guidance.
     """
+    print("TOOL CALLED: retrieve_sales_frameworks")
     return _retrieve_by_knowledge_type(
         query=query,
         knowledge_type=KnowledgeType.SALES_FRAMEWORKS,
@@ -38,6 +39,7 @@ def retrieve_coaching_guides(query: str) -> str:
     Retrieve sales coaching best practices and
     performance improvement guidance.
     """
+    print("TOOL CALLED: retrieve_coaching_guides")
     return _retrieve_by_knowledge_type(
         query=query,
         knowledge_type=KnowledgeType.COACHING_GUIDES,
@@ -49,6 +51,7 @@ def retrieve_call_examples(query: str) -> str:
     Retrieve examples of successful and unsuccessful
     sales conversations.
     """
+    print("TOOL CALLED: retrieve_call_examples")
     return _retrieve_by_knowledge_type(
         query=query,
         knowledge_type=KnowledgeType.CALL_EXAMPLES,

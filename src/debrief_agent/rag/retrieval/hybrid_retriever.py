@@ -45,9 +45,11 @@ class HybridRetriever:
                 knowledge_filter = self._build_knowledge_filter(knowledge_type)
 
                 if query_filter:
-                    query_filter.must.extend(
-                        knowledge_filter.must
-                    )
+                    # must may be None if the caller built a bare Filter()
+                    if query_filter.must is None:
+                        query_filter.must = list(knowledge_filter.must)
+                    else:
+                        query_filter.must.extend(knowledge_filter.must)
                 else:
                     query_filter = knowledge_filter
 
