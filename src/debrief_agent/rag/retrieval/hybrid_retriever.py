@@ -1,7 +1,7 @@
 import logging
 from typing import Any
 
-from qdrant_client.http.models import Filter, ScoredPoint
+from qdrant_client.http.models import Filter, FieldCondition, MatchValue, ScoredPoint
 
 from debrief_agent.rag.embeddings.embedding_service import embeddings
 from debrief_agent.rag.retrieval.retrieval_models import (
@@ -13,16 +13,14 @@ from debrief_agent.rag.vectorstore.qdrant_store import qdrant_store_service
 
 logger = logging.getLogger(__name__)
 
+NUMBER_OF_RETRIEVALS = 10
 
 # Keep mapping permissive for payloads produced by different ingestion paths.
 _CATEGORY_TO_KNOWLEDGE_TYPE: dict[str, KnowledgeType] = {
     "call_examples": KnowledgeType.CALL_EXAMPLES,
     "coaching_guides": KnowledgeType.COACHING_GUIDES,
     "sales_frameworks": KnowledgeType.SALES_FRAMEWORKS,
-    "company_playbooks": KnowledgeType.COMPANY_PLAYBOOKS,
-    "processed_markdown": KnowledgeType.PROCESSED_MARKDOWN,
 }
-
 
 class HybridRetriever:
     """Embed a user query, retrieve Qdrant points, and map them to typed models."""
@@ -30,7 +28,8 @@ class HybridRetriever:
     def retrieve(
         self,
         query: str,
-        limit: int = 5,
+        limit: int = NUMBER_OF_RETRIEVALS,
+        knowledge_type: KnowledgeType | None = None,
         query_filter: Filter | None = None,
     ) -> RetrievalResult:
         """Run similarity retrieval and return normalized retrieval models.
@@ -42,6 +41,16 @@ class HybridRetriever:
         if not cleaned_query:
             raise ValueError("query must not be empty")
         try:
+            if knowledge_type:
+                knowledge_filter = self._build_knowledge_filter(knowledge_type)
+
+                if query_filter:
+                    query_filter.must.extend(
+                        knowledge_filter.must
+                    )
+                else:
+                    query_filter = knowledge_filter
+
             query_vector = self._embed_query(cleaned_query)
             results = self._similarity_search(
                 query_vector=query_vector,
@@ -113,6 +122,18 @@ class HybridRetriever:
                 return candidate.strip()
         return "unknown"
 
+    def _build_knowledge_filter(self, knowledge_type: KnowledgeType) -> Filter:
+        return Filter(
+            must=[
+                FieldCondition(
+                    key="metadata.category",
+                    match=MatchValue(
+                        value=knowledge_type.value,
+                    ),
+                )
+            ]
+        )
+
     @staticmethod
     def _resolve_knowledge_type(
         payload: dict[str, Any],
@@ -138,9 +159,10 @@ hybrid_retriever = HybridRetriever()
 
 def retrieve(
     query: str,
-    limit: int = 5,
+    limit: int = NUMBER_OF_RETRIEVALS,
+    knowledge_type: KnowledgeType | None = None,
     query_filter: Filter | None = None,
 ) -> RetrievalResult:
     """Compatibility helper for call sites expecting function-style retrieval."""
-    return hybrid_retriever.retrieve(query=query, limit=limit, query_filter=query_filter)
+    return hybrid_retriever.retrieve(query=query, limit=limit, knowledge_type=knowledge_type, query_filter=query_filter)
 

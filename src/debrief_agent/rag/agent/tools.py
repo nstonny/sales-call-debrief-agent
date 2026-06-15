@@ -1,0 +1,56 @@
+from langchain.tools import tool
+
+from debrief_agent.rag.retrieval.hybrid_retriever import (
+    hybrid_retriever,
+)
+from debrief_agent.rag.retrieval.retrieval_models import (
+    KnowledgeType,
+)
+
+
+def _retrieve_by_knowledge_type(query: str, knowledge_type: KnowledgeType) -> str:
+    """Retrieve top chunks for a specific knowledge category and serialize them."""
+    result = hybrid_retriever.retrieve(
+        query=query,
+        limit=5,
+        knowledge_type=knowledge_type,
+    )
+
+    if not result.chunks:
+        return "No relevant context found in the selected knowledge base section."
+
+    return "\n\n".join(chunk.text for chunk in result.chunks if chunk.text)
+
+@tool
+def retrieve_sales_frameworks(query: str) -> str:
+    """
+    Retrieve MEDDIC, SPIN, Challenger, discovery,
+    qualification and objection handling guidance.
+    """
+    return _retrieve_by_knowledge_type(
+        query=query,
+        knowledge_type=KnowledgeType.SALES_FRAMEWORKS,
+    )
+
+@tool
+def retrieve_coaching_guides(query: str) -> str:
+    """
+    Retrieve sales coaching best practices and
+    performance improvement guidance.
+    """
+    return _retrieve_by_knowledge_type(
+        query=query,
+        knowledge_type=KnowledgeType.COACHING_GUIDES,
+    )
+
+@tool
+def retrieve_call_examples(query: str) -> str:
+    """
+    Retrieve examples of successful and unsuccessful
+    sales conversations.
+    """
+    return _retrieve_by_knowledge_type(
+        query=query,
+        knowledge_type=KnowledgeType.CALL_EXAMPLES,
+    )
+
