@@ -1,90 +1,41 @@
 # Sales Call Debrief Agent
 
-LLM-powered pipeline for analyzing sales call transcripts and producing structured coaching insights and CRM-ready outputs.
+LLM-powered pipeline for analyzing sales call transcripts and returning structured coaching insights with RAG-backed context.
 
 [![Python](https://img.shields.io/badge/Python-3.13+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-API-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-UI-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io/)
-[![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-Async-CC2927?logo=sqlalchemy&logoColor=white)](https://www.sqlalchemy.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-[![Alembic](https://img.shields.io/badge/Alembic-Migrations-4B5563)](https://alembic.sqlalchemy.org/)
-[![OpenAI](https://img.shields.io/badge/OpenAI-Responses_API-412991?logo=openai&logoColor=white)](https://platform.openai.com/docs/api-reference/responses)
-[![Langfuse](https://img.shields.io/badge/Langfuse-Observability-0EA5E9)](https://langfuse.com/)
 [![Qdrant](https://img.shields.io/badge/Qdrant-Vector_DB-DC244C)](https://qdrant.tech/)
-[![uv](https://img.shields.io/badge/uv-Package_Manager-111827)](https://docs.astral.sh/uv/)
+[![Langfuse](https://img.shields.io/badge/Langfuse-Observability-0EA5E9)](https://langfuse.com/)
 
-This project includes:
-- a FastAPI backend (`/api/upload`) for transcript ingestion and analysis,
-- async SQLAlchemy + PostgreSQL persistence,
-- Alembic migrations,
-- a Streamlit UI for upload and dashboarding,
-- and a CLI runner to compare rubric-driven analysis experiments.
+## What This Project Does
 
-## Table of Contents
+- Accepts a `.txt` sales transcript via `POST /api/upload`
+- Extracts metadata (`rep_name`, `contact_name`, `contact_title`, `deal_stage`)
+- Runs a retrieval-backed debrief agent with LangChain tool calling
+- Returns and persists structured `AnalysisResult` fields:
+  - `summary`, `next_steps`, `competitor_mentioned`
+  - `strengths`, `areas_for_improvement`, `action_items`, `objections_raised`
+  - `sentiment`, `score`
 
-- [Tech Stack](#tech-stack)
-- [Features](#features)
-- [LLM Models Used](#llm-models-used)
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [Quickstart (First Run)](#quickstart-first-run)
-- [Usage](#usage)
-- [RAG Ingestion (Coaching Guides)](#rag-ingestion-coaching-guides)
-- [RAG Ingestion (Call Examples)](#rag-ingestion-call-examples)
-- [PDF to Markdown Prep (MarkItDown)](#pdf-to-markdown-prep-markitdown)
-- [Experiments CLI (Rubric Testing)](#experiments-cli-rubric-testing)
-- [Project Structure](#project-structure)
-- [Configuration](#configuration)
-- [Troubleshooting](#troubleshooting)
-- [Contributing](#contributing)
+## Current Architecture
 
-## Tech Stack
+1. **Upload route**: `src/debrief_agent/api/routes/upload.py`
+2. **Extraction service**: `src/debrief_agent/rag/agent/services/extraction.py`
+3. **Analysis service**: `src/debrief_agent/rag/agent/sales_debrief_agent.py`
+4. **RAG tools**: `src/debrief_agent/rag/agent/tools.py`
+5. **Retriever**: `src/debrief_agent/rag/retrieval/hybrid_retriever.py`
+6. **Persistence**: async SQLAlchemy models in `src/debrief_agent/models/`
 
-- Python 3.13+
-- FastAPI
-- Streamlit
-- SQLAlchemy (async) + asyncpg
-- PostgreSQL
-- Alembic
-- OpenAI Responses API
-- Langfuse (observability/tracing)
-- Qdrant (vector database)
-- uv
-- Jupyter (dev dependency)
-
-## Features
-
-- Upload `.txt` sales call transcripts from the UI.
-- Extract metadata with LLMs:
-  - `rep_name`
-  - `contact_name`
-  - `contact_title`
-  - `deal_stage` (`discovery` | `demo` | `proposal` | `negotiation` | `closing` | `unknown`)
-- Generate structured analysis/debrief with:
-  - `summary`, `strengths`, `areas_for_improvement`, `action_items`
-  - `objections_raised`, `competitor_mentioned`, `next_steps`
-  - `sentiment` (`positive` | `neutral` | `negative`), `score`
-  - parsed via OpenAI Responses structured parsing into `AnalysisResult`
-- Persist calls + analyses in PostgreSQL.
-- Structure-aware chunking for DOCX coaching guides with optional JSONL chunk-review artifacts.
-- Qdrant ingestion CLI for coaching guides (`--dry-run` supported).
-- Section-aware chunking for call examples using dashed heading markers, with optional JSONL trace output.
-- Qdrant ingestion CLI for call examples (`--dry-run` supported).
-- Run rubric-driven experiment batches via CLI and write results to JSONL.
-- Use backend-controlled default rubrics (`ANALYSIS_RUBRICS`) without exposing rubric choice in the UI.
-
-## LLM Models Used
-
-From current service code:
-- Extraction: `gpt-4.1-mini` (`src/debrief_agent/services/extraction.py`)
-- Analysis: `gpt-5-mini` (`src/debrief_agent/services/analysis.py`)
 
 ## Prerequisites
 
 - Python 3.13+
-- PostgreSQL running locally (or reachable remote instance)
+- PostgreSQL
+- Qdrant (local or remote)
 - OpenAI API key
-- `uv` installed
+- `uv`
 
 Install `uv` if needed:
 
@@ -94,87 +45,58 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 
 ## Installation
 
-### 1) Clone and enter project
-
 ```zsh
 git clone https://github.com/nstonny/sales-call-debrief-agent.git
 cd sales-call-debrief-agent
-```
-
-### 2) Create and activate virtual environment
-
-```zsh
 uv venv
 source .venv/bin/activate
-```
-
-### 3) Install dependencies
-
-```zsh
 uv sync
 ```
 
-### 4) Configure environment variables
-
-Create `.env` in project root:
+Create `.env` in repo root:
 
 ```env
 DATABASE_URL=postgresql+asyncpg://<user>:<password>@localhost:5432/<db_name>
 OPENAI_API_KEY=sk-...
-# Optional override of backend defaults
-ANALYSIS_RUBRICS=overpitching_rubric.txt,discovery_rubric.txt,pricing_negotiation_rubric.txt
 
-# Qdrant
 QDRANT_URL=http://localhost:6333
 QDRANT_API_KEY=
 QDRANT_COLLECTION_NAME=sales_knowledge_chunks
 QDRANT_TIMEOUT_SECONDS=10
+
+# Optional
+DEBRIEF_AGENT_MODEL=gpt-5-mini
+DEBRIEF_AGENT_LOG_RAG_CHUNKS=false
 ```
 
-### 5) Run migrations
+Run migrations:
 
 ```zsh
 uv run alembic upgrade head
 ```
 
-## Quickstart (First Run)
+## Run the App
 
-Copy/paste this from project root:
+Backend API:
 
 ```zsh
-uv venv
-source .venv/bin/activate
-uv sync
-uv run alembic upgrade head
 uv run uvicorn debrief_agent.app.main:app --reload
 ```
 
-In a second terminal:
+Streamlit UI (second terminal):
 
 ```zsh
-source .venv/bin/activate
-streamlit run src/ui/streamlit_app.py
+uv run streamlit run src/ui/streamlit_app.py
 ```
 
-Then open:
+Endpoints:
+
 - API docs: `http://localhost:8000/docs`
 - UI: `http://localhost:8501`
 
-## Usage
+## API Usage
 
-### Run backend API
-
-```zsh
-uv run uvicorn debrief_agent.app.main:app --reload
-```
-
-### Run Streamlit frontend
-
-```zsh
-streamlit run src/ui/streamlit_app.py
-```
-
-### Upload + analyze via API (example)
+### Upload and analyze transcript
 
 ```zsh
 curl -X POST "http://localhost:8000/api/upload" \
@@ -183,293 +105,163 @@ curl -X POST "http://localhost:8000/api/upload" \
   -F "deal_value=25000"
 ```
 
-### Service usage (internal)
+### Expected behavior
 
-Service APIs are class-based only:
+- Validates `.txt` + UTF-8
+- Persists `Call`
+- Runs extraction + analysis
+- Persists `Analysis`
+- Returns full `CallResponse` with nested `analysis`
+
+## Service Usage (Internal)
 
 ```python
-from debrief_agent.services.analysis import CallAnalyzer
-from debrief_agent.services.extraction import MetadataExtractor
+from debrief_agent.rag.agent.services.extraction import MetadataExtractor
+from debrief_agent.rag.agent import SalesDebriefAgent
 
 metadata_extractor = MetadataExtractor()
-call_analyzer = CallAnalyzer()
-transcript_text = "<paste transcript text here>"
+analyzer = SalesDebriefAgent()
 
-metadata = await metadata_extractor.extract(transcript_text)
-analysis = await call_analyzer.analyze(
-    transcript="<paste transcript text here>",
-    metadata=metadata,
-    rubric_names=["overpitching_rubric.txt"],
-)
+transcript = "..."
+metadata = await metadata_extractor.extract(transcript)
+analysis = await analyzer.analyze(transcript=transcript, metadata=metadata)
 ```
 
-Backward-compatibility function wrappers were removed from services; use
-`MetadataExtractor.extract(...)` and `CallAnalyzer.analyze(...)` directly.
+## RAG Ingestion Commands
 
-### Qdrant usage (internal)
+These CLIs import `debrief_agent.app.bootstrap_qdrant.ensure_collection`.
+If `src/debrief_agent/app/bootstrap_qdrant.py` is missing in your checkout,
+the ingestion modules will fail to import.
 
-Use the shared sync client in `src/debrief_agent/core/qdrant.py`.
+### 1) Sales frameworks markdown ingestion
 
-```python
-from debrief_agent.core.qdrant import (
-    get_sync_qdrant_client,
-    get_sync_qdrant_collection_name,
-)
+Module: `src/debrief_agent/rag/ingestion/ingest_pdf_documents.py`
 
-qdrant_client = get_sync_qdrant_client()
-collection_name = get_sync_qdrant_collection_name()
-```
-
-The app closes this shared client on shutdown in `src/debrief_agent/app/main.py`.
-
-### RAG Ingestion (Coaching Guides)
-
-Ingestion CLI module: `src/debrief_agent/rag/ingestion/ingest_pdf_documents.py`
-
-What it does:
-- Loads `.docx` files from `src/data/knowledge_base/coaching_guides`
-- Applies structure-aware chunking via `CoachingGuideChunker`
-- Writes chunk-review JSONL (default: `experiments.local/coaching_guides_level1_chunks.jsonl`)
-- Optionally stores chunks in Qdrant
-
-Dry-run (chunk + JSONL trace only):
+Dry-run:
 
 ```zsh
 uv run python -m debrief_agent.rag.ingestion.ingest_pdf_documents --dry-run
 ```
 
-Store chunks in Qdrant:
+Ingest into Qdrant:
 
 ```zsh
 uv run python -m debrief_agent.rag.ingestion.ingest_pdf_documents
 ```
 
-Optional flags:
+### 2) Coaching guides ingestion
+
+Module: `src/debrief_agent/rag/ingestion/ingest_coaching_guides.py`
+
+Dry-run:
 
 ```zsh
-uv run python -m debrief_agent.rag.ingestion.ingest_pdf_documents \
-  --guides-path "src/data/knowledge_base/coaching_guides" \
-  --trace-out "experiments.local/coaching_guides_level1_chunks.jsonl" \
-  --max-chars 1200
+uv run python -m debrief_agent.rag.ingestion.ingest_coaching_guides --dry-run
 ```
 
-### RAG Ingestion (Call Examples)
+Ingest into Qdrant:
 
-Ingestion CLI module: `src/debrief_agent/rag/ingestion/ingest_call_examples.py`
+```zsh
+uv run python -m debrief_agent.rag.ingestion.ingest_coaching_guides
+```
 
-What it does:
-- Loads `.txt` call example files from `src/data/knowledge_base/call_examples`
-- Creates one chunk per section between dashed heading blocks, e.g.:
-  - `--------------------------------------------------`
-  - `QUALIFICATION DISCUSSION`
-  - `--------------------------------------------------`
-- Writes chunk-review JSONL (default: `experiments.local/call_examples_chunks.jsonl`)
-- Optionally stores chunks in Qdrant
+### 3) Call examples ingestion
 
-Dry-run (chunk + JSONL trace only):
+Module: `src/debrief_agent/rag/ingestion/ingest_call_examples.py`
+
+Dry-run:
 
 ```zsh
 uv run python -m debrief_agent.rag.ingestion.ingest_call_examples --dry-run
 ```
 
-Store chunks in Qdrant:
+Ingest into Qdrant:
 
 ```zsh
 uv run python -m debrief_agent.rag.ingestion.ingest_call_examples
 ```
 
-Optional flags:
+### 4) Convert PDF to markdown (MarkItDown)
 
-```zsh
-uv run python -m debrief_agent.rag.ingestion.ingest_call_examples \
-  --call-examples-path "src/data/knowledge_base/call_examples" \
-  --trace-out "experiments.local/call_examples_chunks.jsonl"
-```
-
-### PDF to Markdown Prep (MarkItDown)
-
-Conversion CLI module: `src/debrief_agent/rag/scripts/document_processing/convert_pdf_to_markdown_markitdown.py`
-
-Current prep policy:
-- Keep source PDFs in their original category folders.
-- Write all converted markdown files to centralized `src/data/knowledge_base/processed_markdown/` directory.
-  - Example mapping:
-    - `src/data/knowledge_base/sales_frameworks/SPIN_Selling_Guide.pdf`
-    - `src/data/knowledge_base/processed_markdown/SPIN_Selling_Guide.md`
-    - `src/data/knowledge_base/company_playbooks/Sales_Playbook.pdf`
-    - `src/data/knowledge_base/processed_markdown/Sales_Playbook.md`
-- Use normalization profile `heading_list_table_canonical_v1` for conversion cleanup
-  (headings, lists, tables, and page-artifact removal) so section-aware chunking remains stable.
-
-Current cleanup behavior for converted markdown:
-- Removes page numbers and page-reference lines (for example: `3`, `10`, `Page 2`, `## Page 2`).
-- Removes repeated page headers/footers (for example: repeated guide-title and confidentiality lines).
-- Removes copyright/footer lines (for example: `All rights reserved`).
-- Removes title-page and table-of-contents front matter, starting content at the first real section (`Introduction to MEDDIC`).
-
-Convert PDF to markdown (defaults to SPIN_Selling_Guide.pdf):
+Module: `src/debrief_agent/rag/scripts/document_processing/convert_pdf_to_markdown_markitdown.py`
 
 ```zsh
 uv run python -m debrief_agent.rag.scripts.document_processing.convert_pdf_to_markdown_markitdown
 ```
 
-Convert specific PDF:
+## Debugging and Observability
+
+### RAG chunk logging
+
+To inspect retrieved chunks in the API terminal:
 
 ```zsh
-uv run python -m debrief_agent.rag.scripts.document_processing.convert_pdf_to_markdown_markitdown \
-  src/data/knowledge_base/company_playbooks/Sales_Playbook.pdf \
-  src/data/knowledge_base/processed_markdown/Sales_Playbook.md
+export DEBRIEF_AGENT_LOG_RAG_CHUNKS=true
+uv run uvicorn debrief_agent.app.main:app --reload
 ```
 
-### Langfuse metadata taxonomy
+When tools are called, logs include:
 
-When Langfuse tracing is enabled, the service spans include bounded metadata fields that can be used for filtering in the Langfuse UI.
+- retrieval type and query
+- number of returned chunks
+- per chunk: score, source, preview text
 
-Common fields:
-- `service`: `extraction` or `analysis`
-- `model`: `gpt-4.1-mini` (extraction) or `gpt-5-mini` (analysis)
-- `trace_id`: current Langfuse trace identifier (when available)
-- `session_id`: upload flow uses persisted `call.id` for cross-span correlation
-- `had_refusal`: `true`/`false`
-- `validation_ok`: `true`/`false`
-- `error_type`: failure taxonomy value
+### Langfuse tracing
 
-`error_type` values by service:
-- Extraction (`src/debrief_agent/services/extraction.py`):
-  - `none`, `openai_error`, `llm_refusal`, `validation_error`
-- Analysis (`src/debrief_agent/services/analysis.py`):
-  - `none`, `rubric_error`, `openai_error`, `llm_refusal`, `validation_error`
+Spans include fields like:
 
-`rubric_error` is analysis-only and indicates rubric file resolution failed before the LLM call.
-
-## Experiments CLI (Rubric Testing)
-
-CLI module: `src/debrief_agent/app/run_rubric_experiments.py`
-
-It runs extraction + analysis for exactly one transcript per command and writes one JSON object to JSONL.
-
-### Single bundled transcript + backend default rubrics
-
-```zsh
-uv run python -m debrief_agent.app.run_rubric_experiments \
-  --transcript "src/data/transcripts/transcript_1.txt"
-```
-
-### Single bundled transcript + one rubric
-
-```zsh
-uv run python -m debrief_agent.app.run_rubric_experiments \
-  --transcript "src/data/transcripts/transcript_6.txt" \
-  --rubrics overpitching_rubric.txt \
-  --out "experiments/transcript_6_overpitching.jsonl"
-```
-
-### Single bundled transcript + no rubrics
-
-Use `--no-rubrics` to bypass rubric injection for that run.
-
-```zsh
-uv run python -m debrief_agent.app.run_rubric_experiments \
-  --transcript "src/data/transcripts/transcript_6.txt" \
-  --no-rubrics \
-  --out "experiments/transcript_6_no_rubrics.jsonl"
-```
-
-### Single bundled transcript + all rubrics
-
-```zsh
-uv run python -m debrief_agent.app.run_rubric_experiments \
-  --transcript "src/data/transcripts/transcript_6.txt" \
-  --rubrics overpitching_rubric.txt,discovery_rubric.txt,pricing_negotiation_rubric.txt \
-  --out "experiments/transcript_6_all_rubrics.jsonl"
-```
-
-### Output and inspection
-
-Default output: `experiments/rubric_runs.jsonl`
-
-```zsh
-cat experiments/rubric_runs.jsonl
-```
-
-Quick summary view:
-
-```zsh
-python - <<'PY'
-import json
-from pathlib import Path
-
-for line in Path("experiments/rubric_runs.jsonl").read_text(encoding="utf-8").splitlines():
-    row = json.loads(line)
-    print(f"{row['transcript_name']} | rubrics={','.join(row['rubrics'])} | score={row['score']} | sentiment={row['sentiment']}")
-PY
-```
+- `service`
+- `model`
+- `trace_id`
+- `session_id`
+- `error_type`
+- `validation_ok`
 
 ## Project Structure
 
 ```text
 sales-call-debrief-agent/
-├── migrations/                      # Alembic migrations
+├── migrations/
 ├── src/
 │   ├── data/
-│   │   ├── rubrics/                 # Rubric text files used for analysis prompt injection
-│   │   └── transcripts/             # Bundled transcript fixtures (training/stress-test)
+│   │   ├── knowledge_base/
+│   │   ├── transcripts/
+│   │   └── ...
 │   ├── debrief_agent/
-│   │   ├── api/                     # FastAPI routers/routes
-│   │   ├── app/                     # App entrypoints + CLI tools
-│   │   ├── core/                    # Config + database setup
-│   │   ├── models/                  # SQLAlchemy ORM models
-│   │   ├── prompts/                 # Prompt templates + rubric loader utilities
-│   │   ├── schemas/                 # Pydantic schemas
-│   │   └── services/                # LLM extraction/analysis services
+│   │   ├── api/
+│   │   ├── app/
+│   │   ├── core/
+│   │   ├── models/
+│   │   ├── rag/
+│   │   │   ├── agent/
+│   │   │   │   ├── prompts/
+│   │   │   │   ├── services/
+│   │   │   │   ├── sales_debrief_agent.py
+│   │   │   │   └── tools.py
+│   │   │   ├── ingestion/
+│   │   │   ├── retrieval/
+│   │   │   ├── scripts/
+│   │   │   └── vectorstore/
+│   │   └── schemas/
 │   └── ui/
-│       └── streamlit_app.py         # Streamlit dashboard
-├── experiments/                     # JSONL experiment outputs
+├── experiments.local/
 ├── pyproject.toml
 └── README.md
 ```
 
-## Configuration
-
-From `src/debrief_agent/core/config.py`:
-
-- `DATABASE_URL` (required)
-  - Example: `postgresql+asyncpg://user:pass@localhost:5432/debrief_db`
-- `OPENAI_API_KEY` (required)
-- `ANALYSIS_RUBRICS` (optional)
-  - Comma-separated rubric filenames from `src/data/rubrics`
-  - Default: `overpitching_rubric.txt,discovery_rubric.txt,pricing_negotiation_rubric.txt`
-- `QDRANT_URL` (optional)
-  - Default: `http://localhost:6333`
-- `QDRANT_API_KEY` (optional)
-  - Required only when your Qdrant deployment enforces auth
-- `QDRANT_COLLECTION_NAME` (optional)
-  - Default: `sales_knowledge_chunks`
-- `QDRANT_TIMEOUT_SECONDS` (optional)
-  - Positive integer request timeout in seconds
-  - Default: `10`
-
 ## Troubleshooting
 
 - **`OPENAI_API_KEY is not set`**
-  - Add `OPENAI_API_KEY=...` to `.env`, then restart the API process.
+  - Set it in `.env` and restart the API process.
 - **`DATABASE_URL is not set`**
-  - Add `DATABASE_URL=postgresql+asyncpg://...` to `.env` and rerun migrations.
-- **Alembic upgrade fails**
-  - Verify Postgres is running and reachable, then run:
-    ```zsh
-    uv run alembic upgrade head
-    ```
-- **Upload returns 422 for rubric file**
-  - Check `ANALYSIS_RUBRICS` entries match filenames in `src/data/rubrics`.
-- **Streamlit shows upload failure with no JSON body**
-  - Inspect API logs in the `uvicorn` terminal for the root error.
+  - Set it in `.env`, then run migrations.
+- **`POST /api/upload` returns 502**
+  - Check API logs for extraction or analysis validation errors.
+  - If tools are expected but not used, verify prompts under `rag/agent/prompts/analysis.py`.
+- **No RAG chunk logs visible**
+  - Ensure `DEBRIEF_AGENT_LOG_RAG_CHUNKS=true` in the same process running Uvicorn.
+  - Ensure tools are actually called for that request.
+- **Ingestion CLI import fails with `No module named debrief_agent.app.bootstrap_qdrant`**
+  - Add/restore `src/debrief_agent/app/bootstrap_qdrant.py`, then rerun ingestion.
 - **`uv: command not found`**
-  - Install uv:
-    ```zsh
-    curl -LsSf https://astral.sh/uv/install.sh | sh
-    ```
-  - Restart your shell and verify:
-    ```zsh
-    uv --version
-    ```
+  - Install `uv`, restart shell, verify with `uv --version`.
