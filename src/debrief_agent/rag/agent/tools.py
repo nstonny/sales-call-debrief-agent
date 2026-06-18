@@ -12,7 +12,7 @@ def _retrieve_by_knowledge_type(query: str, knowledge_type: KnowledgeType) -> st
     """Retrieve top chunks for a specific knowledge category and serialize them."""
     result = hybrid_retriever.retrieve(
         query=query,
-        limit=5,
+        limit=10,
         knowledge_type=knowledge_type,
     )
 

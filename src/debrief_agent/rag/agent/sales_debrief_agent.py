@@ -11,10 +11,14 @@ from langchain_openai import ChatOpenAI
 from openai import OpenAIError
 from pydantic import ValidationError
 
-from debrief_agent.core.observability import get_current_trace_id, observe, update_current_span_metadata
-from debrief_agent.prompts.analysis import (
-    build_analysis_system_prompt,
-    build_analysis_user_message,
+from debrief_agent.core.observability import (
+	get_current_trace_id,
+	observe,
+	update_current_span_metadata,
+)
+from debrief_agent.rag.agent.prompts.analysis import (
+	build_analysis_system_prompt,
+	build_analysis_user_message,
 )
 from debrief_agent.rag.agent.tools import (
 	retrieve_call_examples,
@@ -29,9 +33,8 @@ DEFAULT_MODEL_NAME = os.getenv("DEBRIEF_AGENT_MODEL", "gpt-5-mini")
 
 SYSTEM_PROMPT = build_analysis_system_prompt()
 
-
-class SalesDebriefAgent:
-	"""LangChain-based debrief agent that uses retrieval tools instead of rubrics."""
+class CallAnalyzer:
+	"""LangChain-based debrief analyzer that uses retrieval tools."""
 
 	def __init__(
 		self,
@@ -171,7 +174,7 @@ class SalesDebriefAgent:
 	def _load_payload(payload: Any) -> Any:
 		"""Normalize agent output into a JSON-compatible object."""
 		if isinstance(payload, dict):
-			return payload
+			return CallAnalyzer._coerce_payload_shape(payload)
 		if isinstance(payload, AnalysisResult):
 			return payload.model_dump()
 		if isinstance(payload, list):
@@ -186,10 +189,37 @@ class SalesDebriefAgent:
 			payload = "\n".join(text_parts)
 
 		if isinstance(payload, str):
-			cleaned = SalesDebriefAgent._strip_code_fences(payload.strip())
-			return json.loads(cleaned)
+			cleaned = CallAnalyzer._strip_code_fences(payload.strip())
+			parsed = json.loads(cleaned)
+			if isinstance(parsed, dict):
+				return CallAnalyzer._coerce_payload_shape(parsed)
+			return parsed
 
 		raise ValueError("Agent did not return a JSON-compatible payload")
+
+	@staticmethod
+	def _coerce_payload_shape(payload: dict[str, Any]) -> dict[str, Any]:
+		"""Coerce known model drifts into schema-compatible shapes."""
+		coerced = dict(payload)
+		next_steps = coerced.get("next_steps")
+
+		if isinstance(next_steps, list):
+			parts: list[str] = []
+			for item in next_steps:
+				if isinstance(item, str) and item.strip():
+					parts.append(item.strip())
+				elif isinstance(item, dict):
+					segments: list[str] = []
+					for key in ("action", "owner", "due", "goal"):
+						value = item.get(key)
+						if isinstance(value, str) and value.strip():
+							segments.append(value.strip())
+					if segments:
+						parts.append(" | ".join(segments))
+
+			coerced["next_steps"] = "; ".join(parts)
+
+		return coerced
 
 	@staticmethod
 	def _strip_code_fences(value: str) -> str:
@@ -205,7 +235,7 @@ class SalesDebriefAgent:
 		return stripped
 
 
-_default_sales_debrief_agent = SalesDebriefAgent()
+_default_call_analyzer = CallAnalyzer()
 
 
 async def analyze_transcript(
@@ -213,12 +243,10 @@ async def analyze_transcript(
 	metadata: dict[str, Any],
 	session_id: str | None = None,
 ) -> dict[str, Any]:
-	"""Convenience wrapper around the default retrieval-backed debrief agent."""
-	return await _default_sales_debrief_agent.analyze(
+	"""Convenience wrapper around the default debrief analyzer."""
+	return await _default_call_analyzer.analyze(
 		transcript=transcript,
 		metadata=metadata,
 		session_id=session_id,
 	)
-
-
 

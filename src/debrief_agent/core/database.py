@@ -6,7 +6,7 @@ from debrief_agent.core.config import DATABASE_URL
 # --- Create async engine ---
 engine = create_async_engine(
     DATABASE_URL,       # where to connect
-    echo=True,          # logs all SQL to stdout — useful during development
+    echo=False,          # logs all SQL to stdout — useful during development
     future=True,        # use new async features
     pool_pre_ping=True  # check connection health before using it
 )
