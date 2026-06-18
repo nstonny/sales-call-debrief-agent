@@ -10,11 +10,11 @@ This script:
 import argparse
 from pathlib import Path
 
-from debrief_agent.app.bootstrap_qdrant import ensure_collection
+from debrief_agent.rag.ingestion.bootstrap_qdrant import ensure_collection
 from debrief_agent.rag.splitters import PDFChunker
 
 DEFAULT_PROCESSED_MARKDOWN_PATH = Path("src/data/knowledge_base/sales_frameworks")
-DEFAULT_PROCESSED_MARKDOWN_PATH = Path("src/data/knowledge_base/sales_frameworks")
+DEFAULT_TRACE_PATH = Path("src/data/knowledge_base/sales_frameworks")
 
 
 def build_parser() -> argparse.ArgumentParser:

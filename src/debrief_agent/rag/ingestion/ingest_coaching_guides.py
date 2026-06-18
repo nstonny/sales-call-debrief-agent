@@ -10,7 +10,7 @@ This script:
 import argparse
 from pathlib import Path
 
-from debrief_agent.app.bootstrap_qdrant import ensure_collection
+from debrief_agent.rag.ingestion.bootstrap_qdrant import ensure_collection
 from debrief_agent.rag.loaders.loader_factory import LoaderFactory
 from debrief_agent.rag.splitters import CoachingGuideChunker
 
