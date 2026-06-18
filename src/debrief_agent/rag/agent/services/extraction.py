@@ -40,7 +40,7 @@ from debrief_agent.core.observability import (
     observe,
     update_current_span_metadata,
 )
-from debrief_agent.prompts.extraction import (
+from debrief_agent.rag.agent.prompts.extraction import (
     EXTRACTION_SYSTEM_PROMPT,
     build_extraction_user_message,
 )

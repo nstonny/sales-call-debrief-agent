@@ -41,15 +41,9 @@ class CallAnalyzer:
 		model_name: str | None = None,
 		temperature: float = 0.0,
 		tools: Iterable[Any] | None = None,
-		log_agent_events: bool | None = None,
 	) -> None:
 		self._model_name = model_name or DEFAULT_MODEL_NAME
 		self._temperature = temperature
-		self._log_agent_events = (
-			log_agent_events
-			if log_agent_events is not None
-			else os.getenv("DEBRIEF_AGENT_LOG_EVENTS", "false").lower() == "true"
-		)
 		self._tools = list(
 			tools
 			if tools is not None
@@ -107,13 +101,6 @@ class CallAnalyzer:
 				},
 			)
 
-			if self._log_agent_events:
-				async for event in self._agent.astream_events(request_payload, version="v2"):
-					logger.info(
-						"Agent event: %s (%s)",
-						event.get("event"),
-						event.get("name"),
-					)
 
 			result = await self._agent.ainvoke(
 				request_payload
