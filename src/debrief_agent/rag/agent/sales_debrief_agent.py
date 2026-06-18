@@ -41,9 +41,15 @@ class CallAnalyzer:
 		model_name: str | None = None,
 		temperature: float = 0.0,
 		tools: Iterable[Any] | None = None,
+		log_agent_events: bool | None = None,
 	) -> None:
 		self._model_name = model_name or DEFAULT_MODEL_NAME
 		self._temperature = temperature
+		self._log_agent_events = (
+			log_agent_events
+			if log_agent_events is not None
+			else os.getenv("DEBRIEF_AGENT_LOG_EVENTS", "false").lower() == "true"
+		)
 		self._tools = list(
 			tools
 			if tools is not None
@@ -89,18 +95,28 @@ class CallAnalyzer:
 		update_current_span_metadata(trace_metadata)
 
 		try:
+			request_payload = cast(
+				Any,
+				{
+					"messages": [
+						{
+							"role": "user",
+							"content": build_analysis_user_message(cleaned_transcript, metadata),
+						}
+					]
+				},
+			)
+
+			if self._log_agent_events:
+				async for event in self._agent.astream_events(request_payload, version="v2"):
+					logger.info(
+						"Agent event: %s (%s)",
+						event.get("event"),
+						event.get("name"),
+					)
+
 			result = await self._agent.ainvoke(
-				cast(
-					Any,
-					{
-						"messages": [
-							{
-								"role": "user",
-								"content": build_analysis_user_message(cleaned_transcript, metadata),
-							}
-						]
-					},
-				)
+				request_payload
 			)
 		except OpenAIError as exc:
 			trace_metadata["error_type"] = "openai_error"
@@ -201,7 +217,23 @@ class CallAnalyzer:
 	def _coerce_payload_shape(payload: dict[str, Any]) -> dict[str, Any]:
 		"""Coerce known model drifts into schema-compatible shapes."""
 		coerced = dict(payload)
+		competitor = coerced.get("competitor_mentioned")
 		next_steps = coerced.get("next_steps")
+
+		if isinstance(competitor, list):
+			parts: list[str] = []
+			for item in competitor:
+				if isinstance(item, str) and item.strip():
+					parts.append(item.strip())
+				elif isinstance(item, dict):
+					# Support object-shaped competitors by extracting common labels.
+					for key in ("name", "competitor", "value"):
+						value = item.get(key)
+						if isinstance(value, str) and value.strip():
+							parts.append(value.strip())
+							break
+
+			coerced["competitor_mentioned"] = "; ".join(parts) if parts else None
 
 		if isinstance(next_steps, list):
 			parts: list[str] = []
