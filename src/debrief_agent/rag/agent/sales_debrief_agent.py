@@ -105,6 +105,23 @@ class CallAnalyzer:
 			result = await self._agent.ainvoke(
 				request_payload
 			)
+
+			from langchain_core.messages import AIMessage
+			from langfuse import get_client
+
+			for msg in reversed(result.get("messages", [])):
+				if isinstance(msg, AIMessage):
+					usage = getattr(msg, "usage_metadata", None)
+					if usage:
+						get_client().update_current_generation(
+							model = self._model_name,
+							usage_details={
+								"input": usage.get("input_tokens", 0),
+								"output": usage.get("output_tokens", 0),  # confirmed 2379
+								"total": usage.get("total_tokens", 0),
+							},
+						)
+					break
 		except OpenAIError as exc:
 			trace_metadata["error_type"] = "openai_error"
 			update_current_span_metadata(trace_metadata)
