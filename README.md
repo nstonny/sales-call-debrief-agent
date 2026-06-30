@@ -1,6 +1,6 @@
 # Sales Call Debrief Agent
 
-LLM-powered pipeline for analyzing sales call transcripts and returning structured coaching insights with RAG-backed context.
+FastAPI + Streamlit app for analyzing sales call transcripts, returning structured coaching insights, and persisting the results with RAG-backed context.
 
 [![Python](https://img.shields.io/badge/Python-3.13+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-API-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
@@ -11,22 +11,25 @@ LLM-powered pipeline for analyzing sales call transcripts and returning structur
 
 ## What This Project Does
 
-- Accepts a `.txt` sales transcript via `POST /api/upload`
-- Extracts metadata (`rep_name`, `contact_name`, `contact_title`, `deal_stage`)
-- Runs a retrieval-backed debrief agent with LangChain tool calling
-- Returns and persists structured `AnalysisResult` fields:
+- Accepts a UTF-8 `.txt` sales transcript via `POST /api/upload`
+- Extracts metadata (`rep_name`, `contact_name`, `contact_title`, `deal_stage`) with OpenAI structured parsing
+- Runs a retrieval-backed debrief agent with LangChain tool calling against Qdrant
+- Persists `Call` and `Analysis` records, then returns structured `AnalysisResult` fields:
   - `summary`, `next_steps`, `competitor_mentioned`
   - `strengths`, `areas_for_improvement`, `action_items`, `objections_raised`
   - `sentiment`, `score`
 
 ## Current Architecture
 
-1. **Upload route**: `src/debrief_agent/api/routes/upload.py`
-2. **Extraction service**: `src/debrief_agent/rag/agent/services/extraction.py`
-3. **Analysis service**: `src/debrief_agent/rag/agent/sales_debrief_agent.py`
-4. **RAG tools**: `src/debrief_agent/rag/agent/tools.py`
-5. **Retriever**: `src/debrief_agent/rag/retrieval/hybrid_retriever.py`
-6. **Persistence**: async SQLAlchemy models in `src/debrief_agent/models/`
+1. **App entrypoint**: `src/debrief_agent/app/main.py`
+2. **Upload route**: `src/debrief_agent/api/routes/upload.py`
+3. **Extraction service**: `src/debrief_agent/rag/agent/services/extraction.py`
+4. **Analysis service**: `src/debrief_agent/rag/agent/sales_debrief_agent.py`
+5. **RAG tools**: `src/debrief_agent/rag/agent/tools.py`
+6. **Retriever / vector store**: `src/debrief_agent/rag/retrieval/hybrid_retriever.py` and `src/debrief_agent/rag/vectorstore/qdrant_store.py`
+7. **Observability**: `src/debrief_agent/core/observability.py`
+8. **Persistence**: async SQLAlchemy models in `src/debrief_agent/models/`
+9. **UI**: `src/ui/streamlit_app.py`
 
 
 ## Prerequisites
@@ -65,9 +68,13 @@ QDRANT_COLLECTION_NAME=sales_knowledge_chunks
 QDRANT_TIMEOUT_SECONDS=10
 
 # Optional
+ANALYSIS_RUBRICS=overpitching_rubric.txt,discovery_rubric.txt,pricing_negotiation_rubric.txt
 DEBRIEF_AGENT_MODEL=gpt-5-mini
 DEBRIEF_AGENT_LOG_RAG_CHUNKS=false
 ```
+
+If you use Langfuse, set the standard Langfuse environment variables for your
+instance before starting the app.
 
 Run migrations:
 
@@ -129,13 +136,14 @@ analysis = await analyzer.analyze(transcript=transcript, metadata=metadata)
 
 ## RAG Ingestion Commands
 
-These CLIs import `debrief_agent.app.bootstrap_qdrant.ensure_collection`.
-If `src/debrief_agent/app/bootstrap_qdrant.py` is missing in your checkout,
-the ingestion modules will fail to import.
+These CLIs import `debrief_agent.rag.ingestion.bootstrap_qdrant.ensure_collection`
+and use the shared Qdrant collection from `QDRANT_COLLECTION_NAME`.
 
 ### 1) Sales frameworks markdown ingestion
 
 Module: `src/debrief_agent/rag/ingestion/ingest_pdf_documents.py`
+
+Reads processed markdown files from `src/data/knowledge_base/sales_frameworks`.
 
 Dry-run:
 
@@ -185,6 +193,9 @@ uv run python -m debrief_agent.rag.ingestion.ingest_call_examples
 
 Module: `src/debrief_agent/rag/scripts/document_processing/convert_pdf_to_markdown_markitdown.py`
 
+Default paths convert `src/data/knowledge_base/company_playbooks/Sales_Playbook.pdf`
+to `src/data/knowledge_base/company_playbooks/Sales_Playbook.md`.
+
 ```zsh
 uv run python -m debrief_agent.rag.scripts.document_processing.convert_pdf_to_markdown_markitdown
 ```
@@ -216,6 +227,7 @@ Spans include fields like:
 - `session_id`
 - `error_type`
 - `validation_ok`
+- `had_refusal`
 
 ## Project Structure
 
@@ -225,6 +237,10 @@ sales-call-debrief-agent/
 ├── src/
 │   ├── data/
 │   │   ├── knowledge_base/
+│   │   │   ├── call_examples/
+│   │   │   ├── coaching_guides/
+│   │   │   ├── company_playbooks/
+│   │   │   └── sales_frameworks/
 │   │   ├── transcripts/
 │   │   └── ...
 │   ├── debrief_agent/
@@ -238,7 +254,9 @@ sales-call-debrief-agent/
 │   │   │   │   ├── services/
 │   │   │   │   ├── sales_debrief_agent.py
 │   │   │   │   └── tools.py
+│   │   │   ├── embeddings/
 │   │   │   ├── ingestion/
+│   │   │   ├── loaders/
 │   │   │   ├── retrieval/
 │   │   │   ├── scripts/
 │   │   │   └── vectorstore/
@@ -261,7 +279,5 @@ sales-call-debrief-agent/
 - **No RAG chunk logs visible**
   - Ensure `DEBRIEF_AGENT_LOG_RAG_CHUNKS=true` in the same process running Uvicorn.
   - Ensure tools are actually called for that request.
-- **Ingestion CLI import fails with `No module named debrief_agent.app.bootstrap_qdrant`**
-  - Add/restore `src/debrief_agent/app/bootstrap_qdrant.py`, then rerun ingestion.
 - **`uv: command not found`**
   - Install `uv`, restart shell, verify with `uv --version`.
