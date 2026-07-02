@@ -22,8 +22,8 @@ _CATEGORY_TO_KNOWLEDGE_TYPE: dict[str, KnowledgeType] = {
     "sales_frameworks": KnowledgeType.SALES_FRAMEWORKS,
 }
 
-class HybridRetriever:
-    """Embed a user query, retrieve Qdrant points, and map them to typed models."""
+class VectorRetriever:
+    """Embed a user query, retrieve nearest Qdrant vectors, and map them to typed models."""
 
     def retrieve(
         self,
@@ -32,10 +32,10 @@ class HybridRetriever:
         knowledge_type: KnowledgeType | None = None,
         query_filter: Filter | None = None,
     ) -> RetrievalResult:
-        """Run similarity retrieval and return normalized retrieval models.
+        """Run semantic vector search and return normalized retrieval models.
 
         Example:
-            result = hybrid_retriever.retrieve(query="objection handling", limit=5)
+            result = vector_retriever.retrieve(query="objection handling", limit=5)
         """
         cleaned_query = query.strip()
         if not cleaned_query:
@@ -62,7 +62,7 @@ class HybridRetriever:
             chunks = [self._point_to_chunk(point) for point in results]
             return RetrievalResult(query=cleaned_query, chunks=chunks)
         except Exception:
-            logger.exception("Hybrid retrieval failed")
+            logger.exception("Vector retrieval failed")
             raise
 
 
@@ -76,7 +76,7 @@ class HybridRetriever:
         limit: int,
         query_filter: Filter | None,
     ) -> list[ScoredPoint]:
-        """Search Qdrant for nearest-neighbor chunks."""
+        """Search Qdrant for nearest-neighbor vectors."""
         return qdrant_store_service.similarity_search(
             query_vector=query_vector,
             limit=limit,
@@ -156,7 +156,7 @@ class HybridRetriever:
         return KnowledgeType.SALES_FRAMEWORKS
 
 
-hybrid_retriever = HybridRetriever()
+vector_retriever = VectorRetriever()
 
 
 def retrieve(
@@ -166,5 +166,5 @@ def retrieve(
     query_filter: Filter | None = None,
 ) -> RetrievalResult:
     """Compatibility helper for call sites expecting function-style retrieval."""
-    return hybrid_retriever.retrieve(query=query, limit=limit, knowledge_type=knowledge_type, query_filter=query_filter)
+    return vector_retriever.retrieve(query=query, limit=limit, knowledge_type=knowledge_type, query_filter=query_filter)
 
