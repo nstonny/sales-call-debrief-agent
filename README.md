@@ -1,5 +1,15 @@
 # Sales Call Debrief Agent
 
+## 30-Second Recruiter Snapshot
+
+**Problem →** Sales teams lose valuable coaching insights because call reviews are manual, inconsistent, and slow.
+
+**Method →** Built a FastAPI + Streamlit app that ingests sales transcripts, extracts deal metadata, and runs a RAG-backed AI debrief agent to generate structured coaching feedback.
+
+**Result →** Produces immediate, repeatable call analysis (summary, strengths, objections, action items, sentiment, score) and stores results for ongoing coaching and performance tracking.
+
+**How to run →** `uv sync` → `uv run alembic upgrade head` → start API: `uv run uvicorn debrief_agent.app.main:app --reload` → start UI: `uv run streamlit run src/ui/streamlit_app.py`.
+
 FastAPI + Streamlit app for analyzing sales call transcripts, returning structured coaching insights, and persisting the results with RAG-backed context.
 
 [![Python](https://img.shields.io/badge/Python-3.13+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
