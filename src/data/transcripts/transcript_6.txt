@@ -1,0 +1,39 @@
+Brad: Diane! Great to finally connect. I've been looking forward to this one. So, I want to kick things off by showing you what we've built because I think once you see it, you're going to be blown away. We've got a really exciting product and I think it's going to be a perfect fit for you.
+
+Diane: Sure, okay.
+
+Brad: So let me share my screen. Alright, so this is our dashboard. As you can see, everything is right here — all your leads, your pipeline, your forecasting, your activity tracking. It's all in one place. Super clean, super intuitive. Our customers love it. We won a G2 award last quarter for easiest to use. Did you see that?
+
+Diane: I didn't, no.
+
+Brad: Yeah it was a big deal for us. Okay so let me walk you through the lead management module. So when a lead comes in, it automatically gets scored based on our AI engine — and this is really where we stand out from Salesforce and HubSpot, because our AI is actually trained on B2B sales data specifically, not just generic data. So the scoring is much more accurate. You're going to love this.
+
+Diane: Okay. Can I ask — what's the pricing on this?
+
+Brad: Great question, we'll definitely get to that. But first let me show you the automation workflows because I think this is the thing that's really going to resonate. So you can set up sequences — so if a lead doesn't respond in three days, it automatically sends a follow-up, and if they still don't respond, it escalates it. It's basically like having an extra SDR on your team. We have customers who've tripled their outbound response rates with this.
+
+Diane: Right. We actually already have something for sequences.
+
+Brad: Sure, sure — but ours integrates directly with the CRM so it's all native. No duct tape, no third-party tools. Everything talks to everything. Let me show you the reporting suite because the reporting is honestly best in class. You can slice data any way you want — by rep, by region, by product line, by quarter. Our customers tell us they've cut their reporting time by 60%.
+
+Diane: That sounds good but honestly we don't have a big reporting problem right now.
+
+Brad: Totally, totally. Well the thing is once you have this level of visibility you start to realise things you didn't even know you were missing, you know? So let me show you the mobile app — because in today's world reps are on the road and they need to be able to update their pipeline from anywhere. Our app is rated 4.8 on the App Store.
+
+Diane: Brad, I only have about five minutes left. Can you just tell me what this costs?
+
+Brad: Of course! So we have three tiers. Starter is $45 per user per month, Professional is $89, and Enterprise is $150. For a team your size I'd probably recommend Professional or Enterprise depending on what features you need.
+
+Diane: That's quite a bit more than what we're paying now.
+
+Brad: Well when you factor in the ROI it really pays for itself. We have case studies showing customers getting 3x return within the first year. I can send those over.
+
+Diane: Sure, you can send them. I have to jump now though.
+
+Brad: Of course! Really excited about this, Diane. Can we get something in the diary for next week to continue the conversation?
+
+Diane: I'll have a look and get back to you.
+
+Brad: Perfect! I'll send over some times. Really think this could be transformative for your team.
+
+Diane: Thanks Brad. Bye.

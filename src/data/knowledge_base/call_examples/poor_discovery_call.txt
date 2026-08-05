@@ -1,0 +1,209 @@
+CALL TYPE: Initial Discovery Call
+
+Company: Acme Manufacturing
+Rep: John Smith
+Prospect: Michael Brown, VP Operations
+
+--------------------------------------------------
+
+Rep:
+Hi Michael, thanks for joining. I'm excited to show you our platform today.
+
+Prospect:
+Sure.
+
+Rep:
+Before we start, let me give you an overview of our company. We've been in business for ten years and work with hundreds of customers globally.
+
+Prospect:
+Okay.
+
+Rep:
+Our platform uses AI to automate workflows, generate reports, and improve efficiency. Let me share my screen.
+
+Prospect:
+Sounds interesting.
+
+--------------------------------------------------
+PRODUCT PITCH
+--------------------------------------------------
+
+Rep:
+This dashboard gives managers visibility into performance metrics. We also have automated alerts, advanced reporting, workflow automation, and predictive analytics.
+
+Prospect:
+Okay.
+
+Rep:
+Customers love our AI features because they save time and improve productivity.
+
+Prospect:
+Interesting.
+
+Rep:
+We also integrate with many systems and have excellent customer support.
+
+Prospect:
+That's good to know.
+
+--------------------------------------------------
+LIMITED DISCOVERY
+--------------------------------------------------
+
+Rep:
+So, are you currently using another solution?
+
+Prospect:
+We mostly use spreadsheets and internal reporting systems.
+
+Rep:
+Got it.
+
+Rep:
+Well, our solution would definitely be much better than spreadsheets.
+
+Prospect:
+Possibly.
+
+Rep:
+Many companies see great results after implementing our platform.
+
+Prospect:
+Okay.
+
+Rep:
+Our implementation is usually very fast.
+
+Prospect:
+Good.
+
+--------------------------------------------------
+MISSED OPPORTUNITIES
+--------------------------------------------------
+
+Prospect:
+One challenge is that reporting takes a lot of manual effort.
+
+Rep:
+Our platform automates reporting.
+
+Prospect:
+Yes, but the bigger issue is that managers often receive information too late.
+
+Rep:
+Our dashboard updates automatically.
+
+Prospect:
+Okay.
+
+Rep:
+Let me show you another feature.
+
+Prospect:
+Sure.
+
+--------------------------------------------------
+PRICING DISCUSSION
+--------------------------------------------------
+
+Rep:
+Our standard package starts at €50,000 annually.
+
+Prospect:
+That's more expensive than I expected.
+
+Rep:
+We can probably offer a discount.
+
+Prospect:
+Okay.
+
+Rep:
+Would a 15% discount help?
+
+Prospect:
+Maybe.
+
+--------------------------------------------------
+NO QUALIFICATION
+--------------------------------------------------
+
+Rep:
+So what do you think?
+
+Prospect:
+It looks interesting.
+
+Rep:
+Great.
+
+Rep:
+Can I send you a proposal?
+
+Prospect:
+You can, but I'll need to discuss it internally.
+
+Rep:
+Sounds good.
+
+Prospect:
+Who should I include?
+
+Rep:
+Whoever needs to be involved.
+
+Prospect:
+Okay.
+
+Rep:
+I'll follow up next week.
+
+Prospect:
+Sounds good.
+
+--------------------------------------------------
+MANAGER COACHING NOTES
+--------------------------------------------------
+
+Major Issues:
+- Began pitching immediately.
+- Did not establish business goals.
+- Did not explore current processes.
+- Failed to quantify business impact.
+- Ignored stated pain points.
+- Asked almost no open-ended questions.
+- Did not identify stakeholders.
+- Did not identify decision makers.
+- Did not identify budget ownership.
+- Did not understand decision criteria.
+- Did not understand procurement process.
+- Offered discounts prematurely.
+- Failed to establish urgency.
+- Secured weak next steps.
+
+Missed MEDDIC Elements:
+✗ Metrics
+✗ Economic Buyer
+✗ Decision Criteria
+✗ Decision Process
+✗ Identify Pain
+✗ Champion
+
+Missed SPIN Elements:
+✗ Situation Questions (minimal)
+✗ Problem Questions
+✗ Implication Questions
+✗ Need-Payoff Questions
+
+Examples of Poor Behavior:
+- Feature dumping.
+- Talking significantly more than the prospect.
+- Ignoring opportunities to explore pain.
+- Assuming interest without qualification.
+- Leading with product instead of customer needs.
+
+Discovery Score:
+2/10
+
+Coaching Recommendation:
+The rep should spend substantially more time understanding the prospect's situation, problems, business impact, stakeholders, and decision-making process before discussing product features or pricing.

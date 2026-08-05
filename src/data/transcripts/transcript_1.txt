@@ -1,0 +1,20 @@
+Rep (Natalie): Thanks for joining today. I'd love to understand your current sales workflow first.
+
+Customer (Brian, VP Sales): Sure. Right now, managers manually review calls, which takes a lot of time.
+
+Rep: How is that impacting the team?
+
+Customer: Feedback is inconsistent, and reps aren't improving fast enough.
+
+Rep: Understood. Are coaching insights something you'd want automated?
+
+Customer: Definitely. That's one of our biggest pain points.
+
+Rep: That's exactly what our platform focuses on.
+
+Customer: This sounds promising so far.
+
+Rep: Great. The next step would be a personalized product demo.
+
+Customer: I'd be interested in that.
+

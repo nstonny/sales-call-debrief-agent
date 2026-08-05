@@ -1,0 +1,244 @@
+CALL TYPE: Solution Evaluation Call
+
+Company: Acme Manufacturing
+Rep: Sarah Johnson
+Prospect: Michael Brown, VP Operations
+
+--------------------------------------------------
+CONTEXT
+--------------------------------------------------
+
+The prospect has completed an initial discovery process and is evaluating vendors.
+
+The prospect has expressed interest in the solution but has concerns about cost, implementation effort, and internal approval.
+
+--------------------------------------------------
+BUDGET OBJECTION
+--------------------------------------------------
+
+Prospect:
+I like what I've seen so far, but the price is higher than we expected.
+
+Rep:
+I appreciate you bringing that up. Can you help me understand what specifically concerns you about the investment?
+
+Prospect:
+It's roughly 25% higher than another vendor we're considering.
+
+Rep:
+Understood. Besides price, what factors are most important in your evaluation?
+
+Prospect:
+Ease of implementation and reporting capabilities.
+
+Rep:
+Earlier you mentioned that reporting delays cost the business approximately €250,000 per quarter. Is that still accurate?
+
+Prospect:
+Yes.
+
+Rep:
+If we could significantly reduce those delays, would the business impact outweigh the difference in purchase price?
+
+Prospect:
+Potentially, yes.
+
+Rep:
+Would it be helpful if we worked through a business case together?
+
+Prospect:
+Yes, that would help.
+
+--------------------------------------------------
+COMPETITOR OBJECTION
+--------------------------------------------------
+
+Prospect:
+Another vendor is offering a lower price and claims similar functionality.
+
+Rep:
+That's fair. What do you like most about their solution?
+
+Prospect:
+The cost and the simplicity of their proposal.
+
+Rep:
+What concerns do you have about their approach?
+
+Prospect:
+Their integration capabilities seem limited.
+
+Rep:
+How important are integrations to your long-term goals?
+
+Prospect:
+Very important. We don't want another disconnected system.
+
+Rep:
+Would it be useful to compare the long-term operational impact of both approaches?
+
+Prospect:
+Yes.
+
+Rep:
+Let's review those differences together.
+
+--------------------------------------------------
+IMPLEMENTATION RISK OBJECTION
+--------------------------------------------------
+
+Prospect:
+I'm worried implementation could disrupt our operations.
+
+Rep:
+That's a common concern. Can you tell me more about what specifically worries you?
+
+Prospect:
+We don't have a large IT team.
+
+Rep:
+Understood.
+
+Rep:
+Would it be helpful if I shared examples of customers with similar resource constraints?
+
+Prospect:
+Definitely.
+
+Rep:
+Several manufacturing customers completed implementation in under eight weeks with minimal internal resources.
+
+Prospect:
+That's reassuring.
+
+Rep:
+Would a conversation with one of those customers be valuable?
+
+Prospect:
+Yes.
+
+--------------------------------------------------
+TIMING OBJECTION
+--------------------------------------------------
+
+Prospect:
+We're interested, but this may not be the right time.
+
+Rep:
+Can you help me understand what's driving the timing concern?
+
+Prospect:
+Several initiatives are competing for attention.
+
+Rep:
+That makes sense.
+
+Rep:
+If this project were delayed by six months, what impact would that have on the business?
+
+Prospect:
+We would likely continue experiencing reporting delays and inefficiencies.
+
+Rep:
+Do you estimate that would have a financial impact?
+
+Prospect:
+Yes.
+
+Rep:
+Approximately how much?
+
+Prospect:
+Probably several hundred thousand euros.
+
+Rep:
+Given that impact, how should we think about the cost of waiting?
+
+Prospect:
+That's a fair question.
+
+--------------------------------------------------
+AUTHORITY OBJECTION
+--------------------------------------------------
+
+Prospect:
+Ultimately, our CFO will need to approve this.
+
+Rep:
+That's helpful to know.
+
+Rep:
+What factors will be most important to your CFO?
+
+Prospect:
+Financial return and implementation risk.
+
+Rep:
+Would it make sense to schedule a discussion where we can review projected ROI and implementation planning?
+
+Prospect:
+Yes.
+
+Rep:
+I'd be happy to prepare those materials.
+
+--------------------------------------------------
+NEXT STEPS
+--------------------------------------------------
+
+Rep:
+It sounds like the key concerns are investment level, implementation risk, and CFO approval.
+
+Prospect:
+That's correct.
+
+Rep:
+To help with those areas, I'll prepare:
+- A business case analysis
+- ROI projections
+- Customer references
+- Implementation planning materials
+
+Prospect:
+That would be very useful.
+
+Rep:
+Let's review those with your CFO next week.
+
+Prospect:
+Sounds good.
+
+--------------------------------------------------
+MANAGER COACHING NOTES
+--------------------------------------------------
+
+Strengths:
+- Remained calm and professional.
+- Welcomed objections instead of becoming defensive.
+- Explored root causes before responding.
+- Used business impact to reinforce value.
+- Asked clarifying questions.
+- Linked responses to prospect priorities.
+- Avoided unnecessary discounting.
+- Advanced the sales process with clear next steps.
+
+Effective Behaviors:
+✓ Active listening
+✓ Clarification before response
+✓ Value-based selling
+✓ Risk reduction
+✓ Stakeholder alignment
+✓ Collaborative problem solving
+
+Common Objections Addressed:
+✓ Budget
+✓ Competitor
+✓ Implementation Risk
+✓ Timing
+✓ Authority
+
+Objection Handling Score:
+10/10
+
+Coaching Recommendation:
+Excellent example of value-based objection handling. The rep consistently explored concerns, validated the prospect's perspective, and connected responses to measurable business outcomes rather than relying on discounts or product feature dumps.
