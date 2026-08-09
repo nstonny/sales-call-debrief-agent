@@ -9,7 +9,7 @@ FastAPI + Streamlit app for analyzing sales call transcripts, returning structur
 [![Qdrant](https://img.shields.io/badge/Qdrant-Vector_DB-DC244C)](https://qdrant.tech/)
 [![Langfuse](https://img.shields.io/badge/Langfuse-Observability-0EA5E9)](https://langfuse.com/)
 
-## 30-Second Recruiter Snapshot
+## 30-Second Snapshot
 
 **Problem →** Sales teams lose valuable coaching insights because call reviews are manual, inconsistent, and slow.
 
@@ -31,15 +31,42 @@ FastAPI + Streamlit app for analyzing sales call transcripts, returning structur
 
 ## Current Architecture
 
-1. **App entrypoint**: `src/debrief_agent/app/main.py`
-2. **Upload route**: `src/debrief_agent/api/routes/upload.py`
-3. **Extraction service**: `src/debrief_agent/rag/agent/services/extraction.py`
-4. **Analysis service**: `src/debrief_agent/rag/agent/sales_debrief_agent.py`
-5. **RAG tools**: `src/debrief_agent/rag/agent/tools.py`
-6. **Retriever / vector store**: `src/debrief_agent/rag/retrieval/hybrid_retriever.py` and `src/debrief_agent/rag/vectorstore/qdrant_store.py`
-7. **Observability**: `src/debrief_agent/core/observability.py`
-8. **Persistence**: async SQLAlchemy models in `src/debrief_agent/models/`
-9. **UI**: `src/ui/streamlit_app.py`
+```mermaid
+flowchart TD
+    UI["Streamlit UI<br/>src/ui/streamlit_app.py"] -->|"POST /api/upload"| API["FastAPI app<br/>app/main.py"]
+    API --> Route["Upload route<br/>api/routes/upload.py"]
+
+    Route --> Extract["Metadata extraction<br/>rag/agent/services/extraction.py"]
+    Route --> Agent["Sales debrief agent<br/>rag/agent/sales_debrief_agent.py"]
+    Route --> DB[("PostgreSQL<br/>Call + Analysis")]
+
+    Agent -->|"tool calling"| Tools["RAG tools<br/>rag/agent/tools.py"]
+    Tools --> Retriever["VectorRetriever<br/>rag/retrieval/vector_retriever.py"]
+    Retriever --> Embed["Embeddings<br/>rag/embeddings/embedding_service.py"]
+    Retriever --> Store["Qdrant store<br/>rag/vectorstore/qdrant_store.py"]
+    Store --> Qdrant[("Qdrant<br/>vector DB")]
+
+    Extract -->|"structured parse"| OpenAI[("OpenAI")]
+    Embed --> OpenAI
+
+    Extract -. "trace" .-> LF[("Langfuse")]
+    Agent -. "trace" .-> LF
+```
+
+**Key components**
+
+| Layer | Path |
+| --- | --- |
+| App entrypoint | `src/debrief_agent/app/main.py` |
+| Upload route | `src/debrief_agent/api/routes/upload.py` |
+| Extraction service | `src/debrief_agent/rag/agent/services/extraction.py` |
+| Analysis service | `src/debrief_agent/rag/agent/sales_debrief_agent.py` |
+| RAG tools | `src/debrief_agent/rag/agent/tools.py` |
+| Retriever | `src/debrief_agent/rag/retrieval/vector_retriever.py` |
+| Vector store | `src/debrief_agent/rag/vectorstore/qdrant_store.py` |
+| Observability | `src/debrief_agent/core/observability.py` |
+| Persistence | async SQLAlchemy models in `src/debrief_agent/models/` |
+| UI | `src/ui/streamlit_app.py` |
 
 
 ## Prerequisites
@@ -110,6 +137,40 @@ Endpoints:
 
 - API docs: `http://localhost:8000/docs`
 - UI: `http://localhost:8501`
+
+## Testing
+
+The project uses **pytest** (with `pytest-asyncio`, `pytest-mock`, and
+`pytest-cov`). Configuration lives in `pyproject.toml` under
+`[tool.pytest.ini_options]`.
+
+Run the full suite:
+
+```zsh
+uv run pytest
+```
+
+With coverage:
+
+```zsh
+uv run pytest --cov=debrief_agent
+```
+
+The unit tests live in `tests/` and run fully offline — no OpenAI, Qdrant, or
+database connection is required. External boundaries (the OpenAI client, the
+embedding/Qdrant search) are stubbed or patched, so the tests exercise real
+application logic in isolation. Current coverage focuses on:
+
+- **Document chunkers** — coaching guide, PDF/markdown, and call-example
+  splitters (heading detection, long-section splitting, chunk metadata)
+- **Schemas** — `AnalysisResult` and `CallMetadataExtraction` (blank-string
+  normalization, enum coercion, score bounds)
+- **Retrieval** — `VectorRetriever` payload/metadata resolvers, point mapping,
+  and knowledge-type filter merging
+- **Extraction service** — `MetadataExtractor.extract` success path and the
+  502 failure contract (OpenAI error, LLM refusal, invalid payload)
+- **RAG tools & loaders** — knowledge-type routing and extension-based
+  document loading
 
 ## API Usage
 
@@ -272,6 +333,13 @@ sales-call-debrief-agent/
 │   │   │   └── vectorstore/
 │   │   └── schemas/
 │   └── ui/
+├── tests/
+│   └── unit/
+│       ├── agent/
+│       ├── loaders/
+│       ├── retrieval/
+│       ├── schemas/
+│       └── splitters/
 ├── experiments.local/
 ├── pyproject.toml
 └── README.md
