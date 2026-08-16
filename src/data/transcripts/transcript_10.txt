@@ -1,0 +1,105 @@
+Daniel: Hi Rebecca, hi Tom — thanks for making the time today. Can you both hear me okay?
+
+Rebecca: Yep, loud and clear.
+
+Tom: All good on my end.
+
+Daniel: Great. So I know we've got about half an hour. My goal today is to understand where Brightwave is with your customer analytics, show you a bit of NorthStar where it's relevant, and figure out together whether it's a fit. Does that work?
+
+Rebecca: That works. Before you dive in — I'll be honest, we're evaluating a couple of tools right now, so we're fairly far along in our thinking.
+
+Daniel: Appreciate you flagging that. Who else are you looking at, if you don't mind me asking?
+
+Rebecca: We've had a couple of demos with Amplitude, and someone on the team used Mixpanel at their last company.
+
+Daniel: Both solid tools. It'll help me a lot if I understand what's pushing you to look right now — what's not working with your current setup?
+
+Tom: Right now it's a mess, honestly. We've got event data going into BigQuery, some dashboards in Looker, and the growth team basically can't self-serve. Every question they have becomes a ticket for my team.
+
+Rebecca: And that's the real pain. If I want to know why checkout conversion dropped last week, I file a request and wait three days. By then the moment's gone.
+
+Daniel: That three-day lag — what does that cost you, practically? Like when checkout dropped, what happened?
+
+Rebecca: We lost most of a quarter's worth of a promotion because we couldn't diagnose it fast enough. Hard to put an exact number on it but easily six figures in missed revenue.
+
+Daniel: That's significant. Tom, from your side — how much of your team's time goes to these ad hoc requests?
+
+Tom: Roughly? Two of my four analysts spend half their week on growth-team tickets. So a full headcount, effectively.
+
+Daniel: Okay. So there are really two costs here — the slow decisions on Rebecca's side, and a full analyst headcount on yours. Let me show you how teams handle this in NorthStar, and you tell me if it maps. Give me one sec to share my screen.
+
+Rebecca: Go for it.
+
+Daniel: So this is a funnel view — checkout flow, last 30 days. Rebecca, if you were investigating that conversion drop, you'd start here. You can break this down by any property — device, campaign, region — without writing a query. Watch. There, segmented by device. See that mobile Safari drop?
+
+Rebecca: Oh. Yeah, that's exactly the kind of thing that takes us days.
+
+Daniel: And this is self-serve — no ticket to Tom's team. Tom, your analysts would set up the data model once, govern the definitions, and then growth explores within those guardrails.
+
+Tom: That's the part I care about. I've seen self-serve tools turn into chaos — everyone defining "active user" differently. How do you handle metric governance?
+
+Daniel: Good question, and it's a real risk. NorthStar has a semantic layer — you define core metrics centrally, lock them, and everyone else builds on those. So growth can slice freely but they can't redefine what conversion means. Want me to show you the governance panel?
+
+Tom: Yeah, show me that.
+
+Daniel: Here. These are governed metrics — owner, definition, last modified. Only data-team roles can edit these. Everyone else consumes them.
+
+Tom: Okay, that's better than what Amplitude showed us, honestly. Theirs felt looser.
+
+Daniel: How are you thinking about timeline? Is there a date this needs to be solved by?
+
+Rebecca: We want a decision by end of the month. Our Q3 planning starts in April and I don't want to go into it blind again.
+
+Daniel: Understood. And who's involved in the final decision besides the two of you?
+
+Rebecca: It'll be me, Tom, and our CFO signs off on the budget. Above a certain number it goes to him.
+
+Daniel: What's the number where the CFO gets involved?
+
+Rebecca: Anything over about forty thousand a year.
+
+Daniel: Got it. Our team plan for your size — around 40 seats — lands right around there, so the CFO will likely be part of it. What's he going to care about most?
+
+Tom: ROI, plainly. He'll want to see it pays for itself. The analyst-time argument will land with him.
+
+Rebecca: And he hates long implementations. The last tool took five months to roll out and he still brings it up.
+
+Daniel: That's fair — implementation is where a lot of these die. For a team your size, most customers are live in three to four weeks. We assign an onboarding engineer, and because your events are already in BigQuery, we can pipe from there directly rather than re-instrumenting.
+
+Tom: Wait — you can read from our existing BigQuery? We don't have to re-tag everything?
+
+Daniel: Correct. That's usually the biggest time sink and you've already done it. We map your existing schema.
+
+Tom: That changes the math a lot. Re-instrumenting was my main objection.
+
+Daniel: Then let's make sure that's concrete for you. What I'd suggest as a next step: a technical validation session — you bring a slice of your real BigQuery data, we set up the funnel Rebecca cares about live, and Tom's team pressure-tests the governance. Two hours. If it holds up, you take it to the CFO with real numbers, not a demo.
+
+Rebecca: I like that. When could we do it?
+
+Daniel: I've got Thursday or Friday next week. What's better?
+
+Rebecca: Tom?
+
+Tom: Thursday works. Afternoon.
+
+Daniel: Thursday afternoon it is — I'll send an invite with a short prep doc so your team knows what data to bring. And I'll include a one-page ROI outline you can forward to your CFO ahead of time, framed around analyst-time savings.
+
+Rebecca: Perfect. One thing — pricing. Ballpark, so I'm not surprised.
+
+Daniel: Fair. For roughly 40 seats on the team plan you're looking at the low-to-mid forties annually, depending on data volume. I'll firm that up after the validation session when I know your event volume. Nothing hidden — no per-event overage traps like some tools have.
+
+Rebecca: Okay. That's roughly what we expected.
+
+Daniel: Anything I haven't answered, or anything giving you pause right now?
+
+Tom: Not from me. The BigQuery thing was my worry and you addressed it.
+
+Rebecca: I'm good. Honestly this was more useful than the last two demos — you actually asked what we needed.
+
+Daniel: That means a lot, thank you. I'll get the invite and the ROI doc over today. Looking forward to Thursday.
+
+Rebecca: Thanks Daniel. Talk then.
+
+Tom: Thanks, bye.
+
+Daniel: Bye both.
