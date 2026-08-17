@@ -29,7 +29,9 @@ from debrief_agent.schemas.analysis import AnalysisResult
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_MODEL_NAME = os.getenv("DEBRIEF_AGENT_MODEL", "gpt-5-mini")
+# Pairs with DEFAULT_MODEL_NAME in services/extraction.py. This one drives the
+# tool-calling debrief agent, so it defaults to a stronger model.
+DEFAULT_MODEL_NAME = os.getenv("DEBRIEF_ANALYSIS_MODEL", "gpt-5-mini")
 
 SYSTEM_PROMPT = build_analysis_system_prompt()
 

@@ -186,7 +186,8 @@ QDRANT_TIMEOUT_SECONDS=10
 
 # Optional
 ANALYSIS_RUBRICS=overpitching_rubric.txt,discovery_rubric.txt,pricing_negotiation_rubric.txt
-DEBRIEF_AGENT_MODEL=gpt-5-mini
+DEBRIEF_ANALYSIS_MODEL=gpt-5-mini
+DEBRIEF_EXTRACTION_MODEL=gpt-4.1-mini
 DEBRIEF_AGENT_LOG_RAG_CHUNKS=false
 ```
 

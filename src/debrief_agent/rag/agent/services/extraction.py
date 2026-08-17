@@ -18,7 +18,7 @@ Behaviour on failure:
 
 Langfuse metadata (current span):
 - service: "extraction"
-- model: "gpt-4.1-mini"
+- model: str (DEBRIEF_EXTRACTION_MODEL, default "gpt-4.1-mini")
 - trace_id: str | None
 - session_id: str | None (`call.id` in upload flow; unset in some non-API flows)
 - had_refusal: bool
@@ -27,6 +27,7 @@ Langfuse metadata (current span):
 """
 
 import logging
+import os
 from typing import Any, cast
 
 from fastapi import HTTPException
@@ -48,6 +49,11 @@ from debrief_agent.schemas.extraction import CallMetadataExtraction
 
 logger = logging.getLogger(__name__)
 
+# Extraction is a single structured parse, so it defaults to a cheaper, faster
+# model than the tool-calling analysis agent. Mirrors DEFAULT_MODEL_NAME in
+# services/analysis.py.
+DEFAULT_MODEL_NAME = os.getenv("DEBRIEF_EXTRACTION_MODEL", "gpt-4.1-mini")
+
 # Reusable async client — one instance for the lifetime of the process
 _client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
@@ -55,8 +61,13 @@ _client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 class MetadataExtractor:
     """Service class that extracts structured call metadata from transcript text."""
 
-    def __init__(self, client: AsyncOpenAI | None = None) -> None:
+    def __init__(
+        self,
+        client: AsyncOpenAI | None = None,
+        model_name: str | None = None,
+    ) -> None:
         self._client = client or _client
+        self._model_name = model_name or DEFAULT_MODEL_NAME
 
     @observe(name="metadata.extract", as_type="span", capture_input=False, capture_output=False)
     async def extract(self, transcript: str, session_id: str | None = None) -> dict:
@@ -68,7 +79,7 @@ class MetadataExtractor:
         trace_id = get_current_trace_id()
         trace_metadata: dict[str, Any] = {
             "service": "extraction",
-            "model": "gpt-4.1-mini",
+            "model": self._model_name,
             "trace_id": trace_id,
             "session_id": session_id,
             "had_refusal": False,
@@ -80,7 +91,7 @@ class MetadataExtractor:
         # --- Call the LLM via Responses API with structured Pydantic parsing ---
         try:
             response = await cast(Any, self._client.responses).parse(
-                model="gpt-4.1-mini",  # fast and cheap — ideal for structured extraction
+                model=self._model_name,  # fast and cheap — ideal for structured extraction
                 instructions=EXTRACTION_SYSTEM_PROMPT,
                 input=build_extraction_user_message(transcript),
                 temperature=0,  # deterministic — extraction should not be creative
