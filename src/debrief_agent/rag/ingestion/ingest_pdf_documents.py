@@ -14,7 +14,7 @@ from debrief_agent.rag.ingestion.bootstrap_qdrant import ensure_collection
 from debrief_agent.rag.splitters import PDFChunker
 
 DEFAULT_PROCESSED_MARKDOWN_PATH = Path("src/data/knowledge_base/sales_frameworks")
-DEFAULT_TRACE_PATH = Path("src/data/knowledge_base/sales_frameworks")
+DEFAULT_TRACE_PATH = Path("experiments.local/pdf_chunks_trace.jsonl")
 
 
 def build_parser() -> argparse.ArgumentParser:
