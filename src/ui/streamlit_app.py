@@ -1,7 +1,13 @@
+import os
+
 import streamlit as st
 import requests
 
-API_URL = "http://localhost:8000/api/upload"
+# Overridable so the same code works in both topologies. Compose sets
+# DEBRIEF_API_URL to http://api:8000/api/upload, addressing the API by its
+# service name -- inside the UI container, "localhost" is the UI container
+# itself. The default preserves the native `uv run streamlit` workflow.
+API_URL = os.getenv("DEBRIEF_API_URL", "http://localhost:8000/api/upload")
 
 
 def render_dashboard(result: dict) -> None:

@@ -1,0 +1,41 @@
+# Everything here is excluded from the Docker build context — the snapshot of
+# the project sent to the daemon on every `docker build`. Without this file the
+# context is ~889MB (881MB of it .venv alone); with it, roughly 2MB.
+
+# Virtualenv — the image builds its own via `uv sync`. Copying the host venv in
+# would also break it: it hardcodes macOS paths and a macOS interpreter.
+.venv/
+
+# Version control and IDE state
+.git/
+.gitignore
+.idea/
+
+# Python build/cache artifacts
+__pycache__/
+*.py[codz]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Local-only working directories (gitignored; see .gitignore:220-221).
+# The ingestion chunkers recreate experiments.local/ on demand via
+# `output_path.parent.mkdir(parents=True, exist_ok=True)`.
+experiments.local/
+tests.local/
+notebooks/
+
+# Stray local Qdrant data directory
+qdrant_storage/
+
+# Secrets — never bake these into an image layer. Compose passes
+# OPENAI_API_KEY through at runtime instead.
+.env
+
+# macOS noise
+.DS_Store
+
+# Docker's own files: changing them shouldn't invalidate the build cache
+Dockerfile
+.dockerignore
+docker-compose.yml

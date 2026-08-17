@@ -1,0 +1,142 @@
+# Local development stack for the Sales Call Debrief Agent.
+#
+# Compose creates a network automatically and registers each service name as a
+# hostname on it, so containers address each other as db:5432 and qdrant:6333 --
+# never localhost, which inside a container means that container itself.
+
+# Shared by every service built from the Dockerfile. A YAML anchor, so the values
+# are declared once and merged in below with `environment: *app-env`.
+x-app-env: &app-env
+  # Supplied here rather than read from .env: the correct host differs between
+  # Compose (db, qdrant) and a native run (localhost), so .env cannot hold both.
+  DATABASE_URL: postgresql+asyncpg://debrief:debrief@db:5432/debrief_db
+  QDRANT_URL: http://qdrant:6333
+  QDRANT_COLLECTION_NAME: sales_knowledge_chunks
+  QDRANT_TIMEOUT_SECONDS: "10"
+
+  # Interpolated from the host .env by Compose. The `:?` form aborts `up` with a
+  # readable message if it is unset, instead of letting core/config.py:14 raise
+  # from deep inside a container. Never baked into the image -- see .dockerignore.
+  OPENAI_API_KEY: ${OPENAI_API_KEY:?set OPENAI_API_KEY in .env}
+
+  # Optional. The `:-` form defaults to empty so tracing is simply inactive when
+  # unconfigured. LANGFUSE_BASE_URL is the name the installed SDK reads and the
+  # one already used in .env.
+  LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
+  LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
+  LANGFUSE_BASE_URL: ${LANGFUSE_BASE_URL:-}
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      # Development-only credentials. The app receives them via DATABASE_URL,
+      # which docker-compose.yml supplies rather than .env, because the correct
+      # host differs between Compose (db) and a native run (localhost).
+      POSTGRES_USER: debrief
+      POSTGRES_PASSWORD: debrief
+      POSTGRES_DB: debrief_db
+    ports:
+      # Host 5433, not 5432: a native PostgreSQL 17.9 already owns 5432 on this
+      # machine. Containers still reach it on 5432 over the compose network, so
+      # only host-side tooling sees the 5433 offset.
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # `depends_on` alone waits for a container to *start*, not to be ready to
+      # accept connections. Postgres takes a few seconds to initialize on a cold
+      # volume, and the alembic migration in the next step would race it.
+      test: ["CMD-SHELL", "pg_isready -U debrief -d debrief_db"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "6333:6333"
+    volumes:
+      # Named volume, so embedded vectors survive `docker compose down` and the
+      # knowledge base is not re-embedded (and re-paid for) on every restart.
+      - qdrant_storage:/qdrant/storage
+    # No healthcheck: the qdrant/qdrant image ships no curl, wget, or shell
+    # utility suitable for one. Readiness is handled client-side instead, by
+    # wait_for_qdrant() in rag/ingestion/seed_all.py.
+
+  # One-shot job, not a long-running service: it runs to completion and exits 0.
+  # Later services gate on that with `condition: service_completed_successfully`.
+  migrate:
+    build: .
+    command: alembic upgrade head
+    environment: *app-env
+    volumes:
+      # migrations/ is baked into the image, but migrations/env.py:10 imports
+      # debrief_agent.core.config from src, so the mount keeps it consistent with
+      # the api and ui services and picks up config edits without a rebuild.
+      - ./src:/app/src
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # One-shot job. Embeds the knowledge base into Qdrant on first run and skips on
+  # every run after, so the OpenAI embedding cost is paid once per volume.
+  seed:
+    build: .
+    command: python -m debrief_agent.rag.ingestion.seed_all
+    environment: *app-env
+    volumes:
+      # Supplies src/data/knowledge_base, which the ingestion CLIs read with
+      # paths relative to the working directory (/app).
+      - ./src:/app/src
+    depends_on:
+      qdrant:
+        # service_started, not service_healthy: the qdrant image has no
+        # healthcheck (see above). seed_all.wait_for_qdrant() polls for readiness
+        # from the client side instead.
+        condition: service_started
+
+  api:
+    build: .
+    # --host 0.0.0.0 is required. Uvicorn defaults to 127.0.0.1, which inside a
+    # container means only that container -- the published port would accept the
+    # connection and then find nothing listening.
+    #
+    # --reload falls back to uvicorn's StatReload (watchfiles is not a dependency).
+    # Polling is a good fit here: inotify events frequently do not cross macOS
+    # bind mounts, so the event-driven watcher would silently miss edits.
+    command: uvicorn debrief_agent.app.main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    environment: *app-env
+    volumes:
+      # Live reload. Mounting ./src -- never /app, which would shadow /app/.venv
+      # and break the interpreter. `uv sync` installed the project editable, so
+      # the mounted source is what actually executes.
+      - ./src:/app/src
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      seed:
+        condition: service_completed_successfully
+
+  ui:
+    build: .
+    # --server.address 0.0.0.0 for the same reason as the api service above.
+    command: streamlit run src/ui/streamlit_app.py --server.address 0.0.0.0 --server.port 8501
+    ports:
+      - "8501:8501"
+    environment:
+      # Merge the shared block, then add the one value specific to this service.
+      <<: *app-env
+      # Resolves the api service by name. streamlit_app.py falls back to
+      # localhost:8000 when this is unset, which is what keeps `uv run` working.
+      DEBRIEF_API_URL: http://api:8000/api/upload
+    volumes:
+      - ./src:/app/src
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
+  qdrant_storage:
