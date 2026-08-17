@@ -149,6 +149,11 @@ activemq-data/
 
 # Environments
 .env
+# Also ignore variants like .env.local and .env.bak, which carry the same
+# secrets as .env but were not covered by the bare `.env` rule above.
+.env.*
+# ...except the committed template, which contains no real values.
+!.env.example
 .envrc
 .venv
 env/
