@@ -9,11 +9,11 @@ from debrief_agent.models.analysis import Analysis
 from debrief_agent.models.call import Call
 from debrief_agent.schemas.call import CallResponse
 from debrief_agent.rag.agent.services.extraction import MetadataExtractor
-from debrief_agent.rag.agent import SalesDebriefAgent
+from debrief_agent.rag.agent import CallAnalyzer
 
 router = APIRouter()
 metadata_extractor = MetadataExtractor()
-sales_debrief_agent = SalesDebriefAgent()
+call_analyzer = CallAnalyzer()
 
 @router.post(
     "/upload",
@@ -82,7 +82,7 @@ async def upload_transcript(
 
         # Uses the extracted metadata to personalise the debrief prompt.
         # Raises HTTPException(502) on failure, which causes get_db to roll back.
-        analysis_data = await sales_debrief_agent.analyze(transcript_text, metadata, session_id=session_id)
+        analysis_data = await call_analyzer.analyze(transcript_text, metadata, session_id=session_id)
     # --- Create Analysis ORM object and link it to the call ---
     analysis = Analysis(
         call_id=call.id,

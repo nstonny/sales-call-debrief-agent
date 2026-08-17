@@ -37,7 +37,7 @@ flowchart TD
     API --> Route["Upload route<br/>api/routes/upload.py"]
 
     Route --> Extract["Metadata extraction<br/>rag/agent/services/extraction.py"]
-    Route --> Agent["Sales debrief agent<br/>rag/agent/sales_debrief_agent.py"]
+    Route --> Agent["Call analyzer<br/>rag/agent/services/analysis.py"]
     Route --> DB[("PostgreSQL<br/>Call + Analysis")]
 
     Agent -->|"tool calling"| Tools["RAG tools<br/>rag/agent/tools.py"]
@@ -60,7 +60,7 @@ flowchart TD
 | App entrypoint | `src/debrief_agent/app/main.py` |
 | Upload route | `src/debrief_agent/api/routes/upload.py` |
 | Extraction service | `src/debrief_agent/rag/agent/services/extraction.py` |
-| Analysis service | `src/debrief_agent/rag/agent/sales_debrief_agent.py` |
+| Analysis service | `src/debrief_agent/rag/agent/services/analysis.py` |
 | RAG tools | `src/debrief_agent/rag/agent/tools.py` |
 | Retriever | `src/debrief_agent/rag/retrieval/vector_retriever.py` |
 | Vector store | `src/debrief_agent/rag/vectorstore/qdrant_store.py` |
@@ -195,10 +195,10 @@ curl -X POST "http://localhost:8000/api/upload" \
 
 ```python
 from debrief_agent.rag.agent.services.extraction import MetadataExtractor
-from debrief_agent.rag.agent import SalesDebriefAgent
+from debrief_agent.rag.agent import CallAnalyzer
 
 metadata_extractor = MetadataExtractor()
-analyzer = SalesDebriefAgent()
+analyzer = CallAnalyzer()
 
 transcript = "..."
 metadata = await metadata_extractor.extract(transcript)
@@ -323,7 +323,8 @@ sales-call-debrief-agent/
 │   │   │   ├── agent/
 │   │   │   │   ├── prompts/
 │   │   │   │   ├── services/
-│   │   │   │   ├── sales_debrief_agent.py
+│   │   │   │   │   ├── analysis.py
+│   │   │   │   │   └── extraction.py
 │   │   │   │   └── tools.py
 │   │   │   ├── embeddings/
 │   │   │   ├── ingestion/
