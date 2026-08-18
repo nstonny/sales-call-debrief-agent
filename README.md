@@ -2,6 +2,7 @@
 
 FastAPI + Streamlit app for analyzing sales call transcripts, returning structured coaching insights, and persisting the results with RAG-backed context.
 
+[![CI](https://github.com/nstonny/sales-call-debrief-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/nstonny/sales-call-debrief-agent/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/Python-3.13+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Docker Compose](https://img.shields.io/badge/Docker_Compose-One_Command_Setup-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-API-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
@@ -232,6 +233,19 @@ Endpoints:
 The project uses **pytest** (with `pytest-asyncio`, `pytest-mock`, and
 `pytest-cov`). Configuration lives in `pyproject.toml` under
 `[tool.pytest.ini_options]`.
+
+Every push and pull request runs three jobs via GitHub Actions
+(`.github/workflows/ci.yml`): `ruff check` and `ruff format --check`, the pytest
+suite with coverage, and a Docker image build that verifies the package imports
+inside the container. Lint rules are pinned explicitly in `pyproject.toml` under
+`[tool.ruff.lint]` so results do not drift with the ruff version.
+
+Lint and format locally with:
+
+```zsh
+uv run ruff check src/ tests/
+uv run ruff format src/ tests/
+```
 
 Run the full suite:
 
