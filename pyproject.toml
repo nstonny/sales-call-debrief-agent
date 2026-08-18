@@ -21,7 +21,6 @@ dependencies = [
     "langchain-qdrant>=1.1.0",
     "langchain-openai>=1.2.2",
     "langchain-community>=0.4.2",
-    "markitdown[pdf]>=0.1.0",
     "pypdf>=6.12.2",
     "docx2txt>=0.9",
 ]
@@ -41,6 +40,11 @@ dev = [
     "pytest-mock>=3.14",
     "pytest-cov>=5.0",
     "ruff>=0.14",
+    # Maintainer-only: used solely by the offline PDF -> markdown conversion
+    # script, which is imported lazily and never reached by the api, ui,
+    # migrate or seed paths. Kept out of the runtime image, which builds with
+    # `uv sync --no-dev`, since it pulls magika -> onnxruntime + sympy (~120MB).
+    "markitdown[pdf]>=0.1.0",
 ]
 
 [tool.ruff]

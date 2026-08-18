@@ -3395,7 +3395,6 @@ dependencies = [
     { name = "langchain-openai" },
     { name = "langchain-qdrant" },
     { name = "langfuse" },
-    { name = "markitdown", extra = ["pdf"] },
     { name = "openai" },
     { name = "pypdf" },
     { name = "python-dotenv" },
@@ -3410,6 +3409,7 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "jupyter" },
+    { name = "markitdown", extra = ["pdf"] },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
@@ -3428,7 +3428,6 @@ requires-dist = [
     { name = "langchain-openai", specifier = ">=1.2.2" },
     { name = "langchain-qdrant", specifier = ">=1.1.0" },
     { name = "langfuse", specifier = ">=4.9.1,<5" },
-    { name = "markitdown", extras = ["pdf"], specifier = ">=0.1.0" },
     { name = "openai", specifier = ">=1.75.0" },
     { name = "pypdf", specifier = ">=6.12.2" },
     { name = "python-dotenv", specifier = ">=1.1.0" },
@@ -3443,6 +3442,7 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "jupyter", specifier = ">=1.1.1" },
+    { name = "markitdown", extras = ["pdf"], specifier = ">=0.1.0" },
     { name = "pytest", specifier = ">=8.3" },
     { name = "pytest-asyncio", specifier = ">=0.24" },
     { name = "pytest-cov", specifier = ">=5.0" },
