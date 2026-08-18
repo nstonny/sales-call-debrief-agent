@@ -16,6 +16,7 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     try:

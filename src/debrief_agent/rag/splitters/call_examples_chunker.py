@@ -96,7 +96,11 @@ class CallExamplesChunker:
             title = lines[idx + 1].strip()
             bottom = lines[idx + 2].strip()
 
-            if CallExamplesChunker._is_dashed_line(top) and title and CallExamplesChunker._is_dashed_line(bottom):
+            if (
+                CallExamplesChunker._is_dashed_line(top)
+                and title
+                and CallExamplesChunker._is_dashed_line(bottom)
+            ):
                 matches.append((idx, title))
 
         return matches
@@ -111,4 +115,3 @@ class CallExamplesChunker:
         with output_path.open("w", encoding="utf-8") as fp:
             for row in rows:
                 fp.write(json.dumps(row, ensure_ascii=True) + "\n")
-

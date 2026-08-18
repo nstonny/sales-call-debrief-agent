@@ -1,19 +1,18 @@
-from typing import Optional
-
-from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from debrief_agent.core.database import get_db
 from debrief_agent.core.observability import propagate_trace_session
 from debrief_agent.models.analysis import Analysis
 from debrief_agent.models.call import Call
-from debrief_agent.schemas.call import CallResponse
-from debrief_agent.rag.agent.services.extraction import MetadataExtractor
 from debrief_agent.rag.agent import CallAnalyzer
+from debrief_agent.rag.agent.services.extraction import MetadataExtractor
+from debrief_agent.schemas.call import CallResponse
 
 router = APIRouter()
 metadata_extractor = MetadataExtractor()
 call_analyzer = CallAnalyzer()
+
 
 @router.post(
     "/upload",
@@ -29,8 +28,8 @@ call_analyzer = CallAnalyzer()
 )
 async def upload_transcript(
     file: UploadFile = File(..., description="Plain-text transcript file (.txt)"),
-    company: Optional[str] = Form(None, description="Company name (optional)"),
-    deal_value: Optional[float] = Form(None, description="Estimated deal value in EUR (optional)"),
+    company: str | None = Form(None, description="Company name (optional)"),
+    deal_value: float | None = Form(None, description="Estimated deal value in EUR (optional)"),
     db: AsyncSession = Depends(get_db),
 ) -> CallResponse:
     """Upload transcript, persist call/analysis, and correlate LLM traces by call ID."""
@@ -45,11 +44,11 @@ async def upload_transcript(
     raw_bytes = await file.read()
     try:
         transcript_text = raw_bytes.decode("utf-8")
-    except UnicodeDecodeError:
+    except UnicodeDecodeError as exc:
         raise HTTPException(
             status_code=422,
             detail="Could not decode file. Please upload a UTF-8 encoded .txt file.",
-        )
+        ) from exc
 
     if not transcript_text.strip():
         raise HTTPException(status_code=422, detail="Uploaded file is empty.")
@@ -63,7 +62,7 @@ async def upload_transcript(
     )
 
     db.add(call)
-    await db.flush()        # assigns UUID and triggers server_default for created_at
+    await db.flush()  # assigns UUID and triggers server_default for created_at
     await db.refresh(call)  # load server-generated values back into the Python object
 
     # Reuse persisted call ID as the canonical tracing session identifier.
@@ -82,7 +81,9 @@ async def upload_transcript(
 
         # Uses the extracted metadata to personalise the debrief prompt.
         # Raises HTTPException(502) on failure, which causes get_db to roll back.
-        analysis_data = await call_analyzer.analyze(transcript_text, metadata, session_id=session_id)
+        analysis_data = await call_analyzer.analyze(
+            transcript_text, metadata, session_id=session_id
+        )
     # --- Create Analysis ORM object and link it to the call ---
     analysis = Analysis(
         call_id=call.id,
@@ -95,7 +96,7 @@ async def upload_transcript(
         objections_raised=analysis_data["objections_raised"],
         sentiment=analysis_data["sentiment"],
         score=analysis_data["score"],
-        raw_llm_output=analysis_data,   # full parsed response preserved for reuse
+        raw_llm_output=analysis_data,  # full parsed response preserved for reuse
     )
 
     db.add(analysis)

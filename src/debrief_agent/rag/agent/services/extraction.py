@@ -108,7 +108,7 @@ class MetadataExtractor:
             raise HTTPException(
                 status_code=502,
                 detail=f"LLM extraction failed — OpenAI API error: {exc}",
-            )
+            ) from exc
 
         # --- Check for LLM refusal before parsing ---
         # next() scans all output items and their content parts, returning the first
@@ -173,7 +173,7 @@ class MetadataExtractor:
             raise HTTPException(
                 status_code=502,
                 detail="LLM extraction failed — response did not match expected schema.",
-            )
+            ) from exc
 
         trace_metadata["validation_ok"] = True
         update_current_span_metadata(trace_metadata)

@@ -7,7 +7,7 @@ against fake Qdrant points. `retrieve` is tested with `_embed_query` and
 """
 
 import pytest
-from qdrant_client.http.models import Filter, FieldCondition, MatchValue
+from qdrant_client.http.models import FieldCondition, Filter, MatchValue
 
 from debrief_agent.rag.retrieval.retrieval_models import KnowledgeType, RetrievalResult
 from debrief_agent.rag.retrieval.vector_retriever import VectorRetriever
@@ -308,8 +308,6 @@ def test_retrieve_forwards_limit(retriever, mocker):
 
 def test_retrieve_reraises_on_search_failure(retriever, mocker):
     mocker.patch.object(retriever, "_embed_query", return_value=[0.1])
-    mocker.patch.object(
-        retriever, "_similarity_search", side_effect=RuntimeError("qdrant down")
-    )
+    mocker.patch.object(retriever, "_similarity_search", side_effect=RuntimeError("qdrant down"))
     with pytest.raises(RuntimeError, match="qdrant down"):
         retriever.retrieve(query="q")

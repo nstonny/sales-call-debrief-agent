@@ -3,6 +3,7 @@ from pathlib import Path
 from langchain_community.document_loaders import Docx2txtLoader
 from langchain_core.documents import Document
 
+
 class DOCXLoaderService:
     """Loads DOCX files and enriches each chunk with consistent metadata."""
 
@@ -20,6 +21,7 @@ class DOCXLoaderService:
                 }
             )
         return documents
+
 
 def load_docx(docx_path: Path) -> list[Document]:
     """Compatibility helper for call sites that still use function-style loading."""

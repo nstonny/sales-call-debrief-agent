@@ -1,7 +1,6 @@
 from enum import Enum
-from typing import Optional
 
-from pydantic import BaseModel, field_validator, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class DealStage(str, Enum):
@@ -26,10 +25,21 @@ class CallMetadataExtraction(BaseModel):
     `deal_stage` is enum-constrained to `DealStage` to keep downstream analytics
     consistent and prevent free-form stage labels.
     """
-    rep_name: Optional[str] = Field(default=None, description="First name (or full name) of the sales representative on the call")
-    contact_name: Optional[str] = Field(default=None, description="First name (or full name) of the prospect/customer on the call")
-    contact_title: Optional[str] = Field(default=None, description="Job title of the prospect (e.g. 'CTO', 'VP Sales')")
-    deal_stage: Optional[DealStage] = Field(default=None, description="One of: 'discovery', 'demo', 'proposal', 'negotiation', 'closing', 'unknown'")
+
+    rep_name: str | None = Field(
+        default=None,
+        description="First name (or full name) of the sales representative on the call",
+    )
+    contact_name: str | None = Field(
+        default=None, description="First name (or full name) of the prospect/customer on the call"
+    )
+    contact_title: str | None = Field(
+        default=None, description="Job title of the prospect (e.g. 'CTO', 'VP Sales')"
+    )
+    deal_stage: DealStage | None = Field(
+        default=None,
+        description="One of: 'discovery', 'demo', 'proposal', 'negotiation', 'closing', 'unknown'",
+    )
 
     @field_validator("rep_name", "contact_name", "contact_title", "deal_stage", mode="before")
     @classmethod

@@ -69,5 +69,3 @@ def similarity_search(
         limit=limit,
         query_filter=query_filter,
     )
-
-

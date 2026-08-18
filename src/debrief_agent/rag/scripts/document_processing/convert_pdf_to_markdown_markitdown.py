@@ -4,18 +4,13 @@ Default paths target Sales_Playbook conversion into company_playbooks.
 Sales-framework PDFs (SPIN, MEDDIC) should target sales_frameworks/.
 """
 
-
 import argparse
 import importlib
 import re
 from pathlib import Path
 
-DEFAULT_SOURCE_PDF_PATH = Path(
-    "src/data/knowledge_base/company_playbooks/Sales_Playbook.pdf"
-)
-DEFAULT_TARGET_MARKDOWN_PATH = Path(
-    "src/data/knowledge_base/company_playbooks/Sales_Playbook.md"
-)
+DEFAULT_SOURCE_PDF_PATH = Path("src/data/knowledge_base/company_playbooks/Sales_Playbook.pdf")
+DEFAULT_TARGET_MARKDOWN_PATH = Path("src/data/knowledge_base/company_playbooks/Sales_Playbook.md")
 DEFAULT_NORMALIZATION_PROFILE = "heading_list_table_canonical_v1"
 HEADING_CONNECTOR_WORDS = {
     "a",
@@ -96,7 +91,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 def _convert_with_markitdown(source_pdf_path: Path) -> str:
     module = importlib.import_module("markitdown")
-    converter_class = getattr(module, "MarkItDown")
+    converter_class = module.MarkItDown
     converter = converter_class()
     result = converter.convert(str(source_pdf_path))
 
@@ -139,9 +134,9 @@ def _looks_like_heading(line: str) -> bool:
         if title_non_connector_ratio >= 0.8:
             return True
 
-    titleish_ratio = sum(
-        1 for word in letters_only if word.isupper() or word[0].isupper()
-    ) / len(letters_only)
+    titleish_ratio = sum(1 for word in letters_only if word.isupper() or word[0].isupper()) / len(
+        letters_only
+    )
     return titleish_ratio >= 0.8
 
 
@@ -320,15 +315,11 @@ def _parse_scoring_rubric_table(section_lines: list[str]) -> list[str]:
     values = section_lines[4:]
     repaired_values: list[str] = []
     for value in values:
-        repaired_values.extend(
-            _split_line_once(value, r"^(.+?\bdiscussed)\s+(Agreed\b.+)$")
-        )
+        repaired_values.extend(_split_line_once(value, r"^(.+?\bdiscussed)\s+(Agreed\b.+)$"))
 
     second_pass: list[str] = []
     for value in repaired_values:
-        second_pass.extend(
-            _split_line_once(value, r"^(.+?\bknown)\s+(Full\b.+)$")
-        )
+        second_pass.extend(_split_line_once(value, r"^(.+?\bknown)\s+(Full\b.+)$"))
 
     rows = _chunk_rows(second_pass, len(headers))
     return _build_markdown_table(headers, rows) if rows else []
@@ -351,7 +342,7 @@ def _parse_types_of_metrics_table(section_lines: list[str]) -> list[str]:
     while i < len(section_lines):
         line = section_lines[i].strip()
         # Check if this looks like a category heading
-        if line and not line.endswith('.') and len(line) < 50 and i + 1 < len(section_lines):
+        if line and not line.endswith(".") and len(line) < 50 and i + 1 < len(section_lines):
             category = line
             i += 1
             examples = section_lines[i].strip() if i < len(section_lines) else ""
@@ -371,7 +362,7 @@ def _parse_strategies_table(section_lines: list[str]) -> list[str]:
     while i < len(section_lines):
         line = section_lines[i].strip()
         # Check if this looks like a strategy heading
-        if line and not line.endswith('.') and len(line) < 50 and i + 1 < len(section_lines):
+        if line and not line.endswith(".") and len(line) < 50 and i + 1 < len(section_lines):
             strategy = line
             i += 1
             description = section_lines[i].strip() if i < len(section_lines) else ""
@@ -391,7 +382,7 @@ def _parse_categories_of_decision_criteria_table(section_lines: list[str]) -> li
     while i < len(section_lines):
         line = section_lines[i].strip()
         # Check if this looks like a category heading
-        if line and not line.endswith('.') and len(line) < 50 and i + 1 < len(section_lines):
+        if line and not line.endswith(".") and len(line) < 50 and i + 1 < len(section_lines):
             category = line
             i += 1
             examples = section_lines[i].strip() if i < len(section_lines) else ""
@@ -415,7 +406,9 @@ def _parse_levels_of_pain_table(section_lines: list[str]) -> list[str]:
             level_desc = line.split("—", 1)
             if len(level_desc) == 2:
                 i += 1
-                description = section_lines[i].strip() if i < len(section_lines) else level_desc[1].strip()
+                description = (
+                    section_lines[i].strip() if i < len(section_lines) else level_desc[1].strip()
+                )
                 rows.append([level_desc[0].strip(), description])
         i += 1
 
@@ -431,7 +424,7 @@ def _parse_how_to_develop_champion_table(section_lines: list[str]) -> list[str]:
     while i < len(section_lines):
         line = section_lines[i].strip()
         # Check if this looks like an action heading
-        if line and not line.endswith('.') and len(line) < 50 and i + 1 < len(section_lines):
+        if line and not line.endswith(".") and len(line) < 50 and i + 1 < len(section_lines):
             action = line
             i += 1
             description = section_lines[i].strip() if i < len(section_lines) else ""
@@ -499,16 +492,16 @@ def _parse_example_situation_questions_table(section_lines: list[str]) -> list[s
 
     for line in section_lines:
         line = line.strip()
-        if not line or not line.endswith('?'):
+        if not line or not line.endswith("?"):
             continue
 
         # Split on first question word
-        for question_start in ['What ', 'How ', 'Who ', 'Where ', 'When ', 'Which ', 'Roughly ']:
+        for question_start in ["What ", "How ", "Who ", "Where ", "When ", "Which ", "Roughly "]:
             if question_start in line:
                 parts = line.split(question_start, 1)
                 if len(parts) == 2:
                     context = parts[0].strip()
-                    question = question_start.strip() + ' ' + parts[1].strip()
+                    question = question_start.strip() + " " + parts[1].strip()
                     if context and question:
                         rows.append([context, question])
                     break
@@ -526,16 +519,16 @@ def _parse_example_problem_questions_table(section_lines: list[str]) -> list[str
 
     for line in section_lines:
         line = line.strip()
-        if not line or not line.endswith('?'):
+        if not line or not line.endswith("?"):
             continue
 
         # Split on first question word
-        for question_start in ['How ', 'What ', 'Are ', 'Do ', 'Does ', 'Is ', 'Have ', 'Can ']:
+        for question_start in ["How ", "What ", "Are ", "Do ", "Does ", "Is ", "Have ", "Can "]:
             if question_start in line:
                 parts = line.split(question_start, 1)
                 if len(parts) == 2:
                     pain_area = parts[0].strip()
-                    question = question_start.strip() + ' ' + parts[1].strip()
+                    question = question_start.strip() + " " + parts[1].strip()
                     # Filter out lines that are headers or don't look like pain areas
                     if pain_area and question and len(pain_area.split()) <= 4:
                         rows.append([pain_area, question])
@@ -555,7 +548,7 @@ def _parse_how_implication_questions_work_table(section_lines: list[str]) -> lis
         "Implication #1",
         "Implication #2",
         "Implication #3",
-        "Effect on buyer"
+        "Effect on buyer",
     ]
 
     i = 0
@@ -589,16 +582,16 @@ def _parse_example_need_payoff_questions_table(section_lines: list[str]) -> list
 
     for line in section_lines:
         line = line.strip()
-        if not line or not line.endswith('?'):
+        if not line or not line.endswith("?"):
             continue
 
         # Split on first question word (typically "If", "How", "What")
-        for question_start in ['If ', 'How ', 'What ', 'Would ', 'Could ']:
+        for question_start in ["If ", "How ", "What ", "Would ", "Could "]:
             if question_start in line:
                 parts = line.split(question_start, 1)
                 if len(parts) == 2:
                     pain_context = parts[0].strip()
-                    question = question_start.strip() + ' ' + parts[1].strip()
+                    question = question_start.strip() + " " + parts[1].strip()
                     # Filter out lines that don't look like pain contexts
                     if pain_context and question and len(pain_context.split()) <= 4:
                         rows.append([pain_context, question])
@@ -639,12 +632,12 @@ def _parse_spin_common_mistakes_table(section_lines: list[str]) -> list[str]:
         for i in range(1, min(6, len(words))):
             word = words[i]
             # Description typically starts with a capital letter verb (Sellers, Asking, Showing, etc.)
-            if i > 1 and word[0].isupper() and words[i-1][-1].islower():
+            if i > 1 and word[0].isupper() and words[i - 1][-1].islower():
                 mistake_end_idx = i
                 break
 
-        mistake = ' '.join(words[:mistake_end_idx])
-        description = ' '.join(words[mistake_end_idx:]) if mistake_end_idx < len(words) else ""
+        mistake = " ".join(words[:mistake_end_idx])
+        description = " ".join(words[mistake_end_idx:]) if mistake_end_idx < len(words) else ""
 
         if mistake and description:
             rows.append([number, mistake, description])
@@ -670,7 +663,7 @@ def _parse_what_we_sell_table(section_lines: list[str]) -> list[str]:
 
         for product in products:
             if line.startswith(product):
-                description = line[len(product):].strip()
+                description = line[len(product) :].strip()
                 if description:
                     rows.append([product, description])
                 break
@@ -692,12 +685,20 @@ def _parse_primary_icp_table(section_lines: list[str]) -> list[str]:
             continue
 
         # Known ICP dimensions
-        dimensions = ["Company Size", "Revenue", "Sales Org Size", "Segment",
-                     "Geography", "Sales Motion", "Tech Stack", "Pain Triggers"]
+        dimensions = [
+            "Company Size",
+            "Revenue",
+            "Sales Org Size",
+            "Segment",
+            "Geography",
+            "Sales Motion",
+            "Tech Stack",
+            "Pain Triggers",
+        ]
 
         for dimension in dimensions:
             if line.startswith(dimension):
-                description = line[len(dimension):].strip()
+                description = line[len(dimension) :].strip()
                 if description:
                     rows.append([dimension, description])
                 break
@@ -719,8 +720,14 @@ def _parse_meddic_acme_context_table(section_lines: list[str]) -> list[str]:
             continue
 
         # MEDDIC elements
-        elements = ["Metrics", "Economic Buyer", "Decision Criteria",
-                   "Decision Process", "Identify Pain", "Champion"]
+        elements = [
+            "Metrics",
+            "Economic Buyer",
+            "Decision Criteria",
+            "Decision Process",
+            "Identify Pain",
+            "Champion",
+        ]
 
         for element in elements:
             if not line.startswith(element):
@@ -730,12 +737,14 @@ def _parse_meddic_acme_context_table(section_lines: list[str]) -> list[str]:
             if element in rows_by_element:
                 break
 
-            context = line[len(element):].strip()
+            context = line[len(element) :].strip()
             if context:
                 rows_by_element[element] = context
             break
 
-    rows = [[element, rows_by_element[element]] for element in elements if element in rows_by_element]
+    rows = [
+        [element, rows_by_element[element]] for element in elements if element in rows_by_element
+    ]
     return _build_markdown_table(headers, rows) if rows else []
 
 
@@ -757,7 +766,7 @@ def _parse_discounting_guidelines_table(section_lines: list[str]) -> list[str]:
 
         for discount_range in ranges:
             if line.startswith(discount_range):
-                guidelines = line[len(discount_range):].strip()
+                guidelines = line[len(discount_range) :].strip()
                 if guidelines:
                     rows.append([discount_range, guidelines])
                 break
@@ -779,12 +788,17 @@ def _parse_mutual_close_plan_table(section_lines: list[str]) -> list[str]:
             continue
 
         # MCP components
-        components = ["Goal State", "Milestones", "Dependencies",
-                     "Success Metrics", "Escalation Path"]
+        components = [
+            "Goal State",
+            "Milestones",
+            "Dependencies",
+            "Success Metrics",
+            "Escalation Path",
+        ]
 
         for component in components:
             if line.startswith(component):
-                description = line[len(component):].strip()
+                description = line[len(component) :].strip()
                 if description:
                     rows.append([component, description])
                 break
@@ -806,12 +820,20 @@ def _parse_compensation_structure_table(section_lines: list[str]) -> list[str]:
             continue
 
         # Compensation components
-        components = ["Base / Variable", "Accelerators", "Multi-year deals",
-                     "SPIFs", "Clawbacks", "Ramp", "Commission", "Processing"]
+        components = [
+            "Base / Variable",
+            "Accelerators",
+            "Multi-year deals",
+            "SPIFs",
+            "Clawbacks",
+            "Ramp",
+            "Commission",
+            "Processing",
+        ]
 
         for component in components:
             if line.startswith(component):
-                details = line[len(component):].strip()
+                details = line[len(component) :].strip()
                 if details:
                     rows.append([component, details])
                 break
@@ -985,10 +1007,7 @@ def _is_removable_page_artifact(line: str) -> bool:
         return True
 
     # Drop repeated guide title footer artifacts
-    if "meddic sales methodology guide" in lowered or "salescoach ai" in lowered:
-        return True
-
-    return False
+    return "meddic sales methodology guide" in lowered or "salescoach ai" in lowered
 
 
 def _remove_title_page_and_toc(lines: list[str]) -> list[str]:
@@ -1017,9 +1036,7 @@ def _remove_title_page_and_toc(lines: list[str]) -> list[str]:
         if len(toc_block) < 3:
             return None
 
-        toc_titles = [
-            _strip_toc_page_number(_normalized_heading_text(line)) for line in toc_block
-        ]
+        toc_titles = [_strip_toc_page_number(_normalized_heading_text(line)) for line in toc_block]
         first_title = toc_titles[0]
 
         for search_idx in range(idx, len(lines)):
@@ -1158,8 +1175,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-
-
-
-

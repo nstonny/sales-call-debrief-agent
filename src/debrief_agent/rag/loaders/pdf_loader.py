@@ -3,6 +3,7 @@ from pathlib import Path
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_core.documents import Document
 
+
 class PDFLoaderService:
     """Loads PDF files and enriches each page chunk with consistent metadata."""
 
@@ -20,6 +21,7 @@ class PDFLoaderService:
                 }
             )
         return documents
+
 
 def load_pdf(pdf_path: Path) -> list[Document]:
     """Compatibility helper for call sites that still use function-style loading."""

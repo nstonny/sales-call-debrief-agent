@@ -3,7 +3,8 @@ from __future__ import annotations
 import json
 import logging
 import os
-from typing import Any, Iterable, cast
+from collections.abc import Iterable
+from typing import Any, cast
 
 from fastapi import HTTPException
 from langchain.agents import create_agent
@@ -34,6 +35,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_MODEL_NAME = os.getenv("DEBRIEF_ANALYSIS_MODEL", "gpt-5-mini")
 
 SYSTEM_PROMPT = build_analysis_system_prompt()
+
 
 class CallAnalyzer:
     """LangChain-based debrief analyzer that uses retrieval tools."""
@@ -103,10 +105,7 @@ class CallAnalyzer:
                 },
             )
 
-
-            result = await self._agent.ainvoke(
-                request_payload
-            )
+            result = await self._agent.ainvoke(request_payload)
 
             from langchain_core.messages import AIMessage
             from langfuse import get_client
@@ -116,7 +115,7 @@ class CallAnalyzer:
                     usage = getattr(msg, "usage_metadata", None)
                     if usage:
                         get_client().update_current_generation(
-                            model = self._model_name,
+                            model=self._model_name,
                             usage_details={
                                 "input": usage.get("input_tokens", 0),
                                 "output": usage.get("output_tokens", 0),  # confirmed 2379
@@ -135,7 +134,7 @@ class CallAnalyzer:
             raise HTTPException(
                 status_code=502,
                 detail=f"LLM debrief failed -- OpenAI API error: {exc}",
-            )
+            ) from exc
         except HTTPException:
             raise
         except Exception as exc:
@@ -148,7 +147,7 @@ class CallAnalyzer:
             raise HTTPException(
                 status_code=502,
                 detail=f"LLM debrief failed -- agent execution error: {exc}",
-            )
+            ) from exc
 
         try:
             raw_payload = self._extract_agent_payload(result)
@@ -169,7 +168,7 @@ class CallAnalyzer:
             raise HTTPException(
                 status_code=502,
                 detail="LLM debrief failed -- response did not match expected schema.",
-            )
+            ) from exc
 
         trace_metadata["validation_ok"] = True
         update_current_span_metadata(trace_metadata)
@@ -202,10 +201,7 @@ class CallAnalyzer:
         if isinstance(payload, list):
             text_parts: list[str] = []
             for item in payload:
-                if isinstance(item, dict):
-                    text = item.get("text")
-                else:
-                    text = getattr(item, "text", None)
+                text = item.get("text") if isinstance(item, dict) else getattr(item, "text", None)
                 if isinstance(text, str) and text.strip():
                     text_parts.append(text.strip())
             payload = "\n".join(text_parts)
@@ -287,4 +283,3 @@ async def analyze_transcript(
         metadata=metadata,
         session_id=session_id,
     )
-

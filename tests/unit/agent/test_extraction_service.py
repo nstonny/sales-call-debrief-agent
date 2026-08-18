@@ -14,7 +14,6 @@ from openai import OpenAIError
 from debrief_agent.rag.agent.services.extraction import MetadataExtractor
 from debrief_agent.schemas.extraction import CallMetadataExtraction, DealStage
 
-
 # ---------------------------------------------------------------------------
 # Fake Responses-API response builders
 # ---------------------------------------------------------------------------
@@ -68,9 +67,7 @@ async def test_extract_validates_dict_payload(make_openai_client):
 
 async def test_extract_normalizes_blank_fields(make_openai_client):
     # The schema validator turns blank strings into None.
-    client = make_openai_client(
-        result=_parsed_response({"rep_name": "   ", "contact_name": "Lee"})
-    )
+    client = make_openai_client(result=_parsed_response({"rep_name": "   ", "contact_name": "Lee"}))
     extractor = MetadataExtractor(client=client)
 
     result = await extractor.extract(transcript="t")
@@ -139,9 +136,7 @@ async def test_extract_raises_502_when_no_parsed_payload(make_openai_client):
 
 async def test_extract_raises_502_on_validation_error(make_openai_client):
     # An invalid deal_stage fails Pydantic validation.
-    client = make_openai_client(
-        result=_parsed_response({"deal_stage": "not_a_real_stage"})
-    )
+    client = make_openai_client(result=_parsed_response({"deal_stage": "not_a_real_stage"}))
     extractor = MetadataExtractor(client=client)
 
     with pytest.raises(HTTPException) as exc_info:

@@ -144,8 +144,7 @@ def build_analysis_user_message(transcript: str, metadata: dict) -> str:
         f"- Deal stage: {stage}\n"
     )
 
-    return (
-        f"""{context_block}\n
+    return f"""{context_block}\n
         Before producing the debrief:
 
         1. Retrieve relevant sales knowledge.
@@ -156,4 +155,3 @@ def build_analysis_user_message(transcript: str, metadata: dict) -> str:
 
         Transcript:
         {transcript}"""
-    )

@@ -9,7 +9,6 @@ from pydantic import ValidationError
 
 from debrief_agent.schemas.extraction import CallMetadataExtraction, DealStage
 
-
 # ---------------------------------------------------------------------------
 # Defaults
 # ---------------------------------------------------------------------------

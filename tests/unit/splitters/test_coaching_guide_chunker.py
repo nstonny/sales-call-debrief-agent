@@ -11,7 +11,6 @@ import pytest
 
 from debrief_agent.rag.splitters.coaching_guide_chunker import CoachingGuideChunker
 
-
 # ---------------------------------------------------------------------------
 # __init__ validation
 # ---------------------------------------------------------------------------
@@ -36,11 +35,11 @@ def test_init_accepts_positive_max_chars():
 @pytest.mark.parametrize(
     "text",
     [
-        "Discovery Best Practices",       # title-case phrase
-        "Objection Handling",             # two title-case words
-        "OVERVIEW",                       # all caps
-        "1. Introduction",                # numbered with dot
-        "2) Steps To Follow",             # numbered with paren
+        "Discovery Best Practices",  # title-case phrase
+        "Objection Handling",  # two title-case words
+        "OVERVIEW",  # all caps
+        "1. Introduction",  # numbered with dot
+        "2) Steps To Follow",  # numbered with paren
     ],
 )
 def test_looks_like_heading_true(text):
@@ -52,10 +51,10 @@ def test_looks_like_heading_true(text):
     [
         "This is a sentence that ends with a period.",  # ends with '.'
         "ask open questions to surface the customer pain",  # lowercase body
-        "x" * 91,                                        # too long (> 90 chars)
+        "x" * 91,  # too long (> 90 chars)
         "One Two Three Four Five Six Seven Eight Nine Ten Eleven",  # > 10 words
-        "",                                              # empty
-        "123 456",                                       # no letters
+        "",  # empty
+        "123 456",  # no letters
     ],
 )
 def test_looks_like_heading_false(text):

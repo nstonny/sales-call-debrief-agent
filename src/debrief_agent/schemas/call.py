@@ -1,6 +1,5 @@
 import uuid
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel
 
@@ -12,22 +11,22 @@ class CallResponse(BaseModel):
     Shape of the JSON response returned after a transcript is uploaded.
     Includes the fully populated call metadata and the nested analysis debrief.
     """
+
     id: uuid.UUID
     filename: str
     created_at: datetime
 
     # LLM-extracted (null until extraction pass runs)
-    rep_name: Optional[str] = None
-    contact_name: Optional[str] = None
-    contact_title: Optional[str] = None
-    deal_stage: Optional[str] = None
+    rep_name: str | None = None
+    contact_name: str | None = None
+    contact_title: str | None = None
+    deal_stage: str | None = None
 
     # Manually supplied at upload time
-    company: Optional[str] = None
-    deal_value: Optional[float] = None
+    company: str | None = None
+    deal_value: float | None = None
 
     # Nested analysis debrief (null until analysis pass runs)
-    analysis: Optional[AnalysisResult] = None
+    analysis: AnalysisResult | None = None
 
     model_config = {"from_attributes": True}  # allows building from ORM object
-

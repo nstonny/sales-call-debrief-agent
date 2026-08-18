@@ -70,9 +70,7 @@ def run_ingestion(
 
         get_vector_store().add_documents(chunks)
 
-    print(
-        f"Loaded {source_count} source markdown documents from {processed_markdown_path}"
-    )
+    print(f"Loaded {source_count} source markdown documents from {processed_markdown_path}")
     print(f"Created {len(chunks)} chunks")
     print(f"Wrote chunk review JSONL to {trace_output_path}")
     if dry_run:

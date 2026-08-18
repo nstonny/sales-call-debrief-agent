@@ -3,11 +3,11 @@ import os
 
 from langchain.tools import tool
 
-from debrief_agent.rag.retrieval.vector_retriever import (
-    vector_retriever,
-)
 from debrief_agent.rag.retrieval.retrieval_models import (
     KnowledgeType,
+)
+from debrief_agent.rag.retrieval.vector_retriever import (
+    vector_retriever,
 )
 
 logger = logging.getLogger(__name__)
@@ -62,6 +62,7 @@ def _retrieve_by_knowledge_type(query: str, knowledge_type: KnowledgeType) -> st
 
     return "\n\n".join(chunk.text for chunk in result.chunks if chunk.text)
 
+
 @tool
 def retrieve_sales_frameworks(query: str) -> str:
     """
@@ -73,6 +74,7 @@ def retrieve_sales_frameworks(query: str) -> str:
         query=query,
         knowledge_type=KnowledgeType.SALES_FRAMEWORKS,
     )
+
 
 @tool
 def retrieve_coaching_guides(query: str) -> str:
@@ -86,6 +88,7 @@ def retrieve_coaching_guides(query: str) -> str:
         knowledge_type=KnowledgeType.COACHING_GUIDES,
     )
 
+
 @tool
 def retrieve_call_examples(query: str) -> str:
     """
@@ -97,4 +100,3 @@ def retrieve_call_examples(query: str) -> str:
         query=query,
         knowledge_type=KnowledgeType.CALL_EXAMPLES,
     )
-

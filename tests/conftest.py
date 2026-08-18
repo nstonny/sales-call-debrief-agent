@@ -13,7 +13,6 @@ from typing import Any
 import pytest
 from langchain_core.documents import Document
 
-
 # ---------------------------------------------------------------------------
 # LangChain Document fixtures (chunker / loader tests)
 # ---------------------------------------------------------------------------
@@ -112,6 +111,7 @@ class FakeScoredPoint:
 @pytest.fixture
 def make_point():
     """Factory for building fake Qdrant scored points."""
+
     def _make(score: float = 0.9, payload: dict[str, Any] | None = None) -> FakeScoredPoint:
         return FakeScoredPoint(score=score, payload=payload)
 
@@ -146,6 +146,7 @@ class FakeOpenAIClient:
 @pytest.fixture
 def make_openai_client():
     """Factory that builds a fake OpenAI client returning `result` or raising `exc`."""
+
     def _make(result: Any = None, exc: Exception | None = None) -> FakeOpenAIClient:
         return FakeOpenAIClient(responses=FakeResponsesAPI(result=result, exc=exc))
 

@@ -2,8 +2,8 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import String, Text, Numeric, DateTime, ForeignKey, func
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import DateTime, ForeignKey, Numeric, String, Text, func
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 if TYPE_CHECKING:
@@ -20,6 +20,7 @@ class Analysis(Base):
     raw_llm_output preserves the full LLM response so new fields can be
     parsed later without re-calling the API.
     """
+
     __tablename__ = "analyses"
 
     # --- Primary key ---
@@ -49,7 +50,9 @@ class Analysis(Base):
     objections_raised: Mapped[list | None] = mapped_column(JSONB, nullable=True)
 
     # --- LLM scoring ---
-    sentiment: Mapped[str | None] = mapped_column(String(20), nullable=True)   # positive / neutral / negative
+    sentiment: Mapped[str | None] = mapped_column(
+        String(20), nullable=True
+    )  # positive / neutral / negative
     score: Mapped[float | None] = mapped_column(Numeric(4, 1), nullable=True)  # 0.0 – 10.0
 
     # --- Full LLM response preserved for reuse / debugging ---
@@ -67,6 +70,3 @@ class Analysis(Base):
         "Call",
         back_populates="analysis",
     )
-
-
-

@@ -4,9 +4,10 @@ This module centralizes Langfuse helpers so service files avoid duplicated
 best-effort tracing logic.
 """
 
-from contextlib import contextmanager
 import logging
-from typing import Any, Iterator
+from collections.abc import Iterator
+from contextlib import contextmanager
+from typing import Any
 
 from langfuse import get_client, observe, propagate_attributes
 
@@ -39,7 +40,10 @@ def get_current_trace_id() -> str | None:
 
 
 @contextmanager
-def propagate_trace_session(session_id: str | None, trace_name: str | None = None,) -> Iterator[None]:
+def propagate_trace_session(
+    session_id: str | None,
+    trace_name: str | None = None,
+) -> Iterator[None]:
     """Context manager that propagates trace-level attributes for session correlation.
 
     Uses Langfuse `propagate_attributes(session_id=...)` so child spans inherit
@@ -52,7 +56,10 @@ def propagate_trace_session(session_id: str | None, trace_name: str | None = Non
         return
 
     try:
-        propagation_ctx = propagate_attributes(session_id=session_id, trace_name=trace_name,)
+        propagation_ctx = propagate_attributes(
+            session_id=session_id,
+            trace_name=trace_name,
+        )
     except Exception:
         logger.debug("Could not initialize Langfuse session propagation", exc_info=True)
         yield
@@ -63,8 +70,8 @@ def propagate_trace_session(session_id: str | None, trace_name: str | None = Non
 
 
 __all__ = [
-    "observe",
-    "update_current_span_metadata",
     "get_current_trace_id",
+    "observe",
     "propagate_trace_session",
+    "update_current_span_metadata",
 ]

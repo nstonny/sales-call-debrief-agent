@@ -11,7 +11,6 @@ import pytest
 
 from debrief_agent.rag.splitters.pdf_chunker import PDFChunker
 
-
 # ---------------------------------------------------------------------------
 # __init__ validation
 # ---------------------------------------------------------------------------

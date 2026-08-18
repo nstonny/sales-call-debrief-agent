@@ -11,7 +11,6 @@ import pytest
 
 from debrief_agent.rag.splitters.call_examples_chunker import CallExamplesChunker
 
-
 # ---------------------------------------------------------------------------
 # _is_dashed_line
 # ---------------------------------------------------------------------------
@@ -25,12 +24,12 @@ def test_is_dashed_line_true(value):
 @pytest.mark.parametrize(
     "value",
     [
-        "-" * 9,          # too short (must be >= 10)
-        "",               # empty
-        "---- ----",      # contains a space
-        "----------x",    # contains a non-dash char
-        "==========",     # wrong char
-        "—" * 10,         # em dashes, not hyphens
+        "-" * 9,  # too short (must be >= 10)
+        "",  # empty
+        "---- ----",  # contains a space
+        "----------x",  # contains a non-dash char
+        "==========",  # wrong char
+        "—" * 10,  # em dashes, not hyphens
     ],
 )
 def test_is_dashed_line_false(value):
@@ -95,12 +94,7 @@ def test_section_bodies_are_captured(call_examples_document):
 
 
 def test_no_preamble_means_no_overview(make_doc):
-    content = (
-        "----------\n"
-        "Only Section\n"
-        "----------\n"
-        "The body of the only section.\n"
-    )
+    content = "----------\nOnly Section\n----------\nThe body of the only section.\n"
     chunks = CallExamplesChunker().chunk_document(make_doc(content))
     titles = [c.metadata["section_title"] for c in chunks]
     assert titles == ["Only Section"]
@@ -166,10 +160,7 @@ def test_chunk_documents_concatenates_all_chunks(call_examples_document, make_do
     )
     chunker = CallExamplesChunker()
     combined = chunker.chunk_documents([call_examples_document, other])
-    expected = (
-        chunker.chunk_document(call_examples_document)
-        + chunker.chunk_document(other)
-    )
+    expected = chunker.chunk_document(call_examples_document) + chunker.chunk_document(other)
     assert len(combined) == len(expected)
 
 

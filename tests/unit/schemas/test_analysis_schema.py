@@ -10,7 +10,6 @@ from pydantic import ValidationError
 
 from debrief_agent.schemas.analysis import AnalysisResult, Sentiment
 
-
 # ---------------------------------------------------------------------------
 # Defaults
 # ---------------------------------------------------------------------------

@@ -1,8 +1,8 @@
 import uuid
 from datetime import datetime
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import String, Text, Numeric, DateTime, func
+from sqlalchemy import DateTime, Numeric, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -20,6 +20,7 @@ class Call(Base):
     extraction pass after upload. company and deal_value are nullable because
     they are not present in transcripts and must be supplied manually.
     """
+
     __tablename__ = "calls"
 
     # --- Primary key ---
@@ -43,7 +44,6 @@ class Call(Base):
     company: Mapped[str | None] = mapped_column(String(150), nullable=True)
     deal_value: Mapped[float | None] = mapped_column(Numeric(12, 2), nullable=True)
 
-
     # --- Timestamp ---
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -58,6 +58,3 @@ class Call(Base):
         uselist=False,  # one-to-one
         cascade="all, delete-orphan",
     )
-
-
-

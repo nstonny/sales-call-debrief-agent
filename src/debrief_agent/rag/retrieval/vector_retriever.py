@@ -1,13 +1,13 @@
 import logging
 from typing import Any
 
-from qdrant_client.http.models import Filter, FieldCondition, MatchValue, ScoredPoint
+from qdrant_client.http.models import FieldCondition, Filter, MatchValue, ScoredPoint
 
 from debrief_agent.rag.embeddings.embedding_service import embeddings
 from debrief_agent.rag.retrieval.retrieval_models import (
     KnowledgeType,
-    RetrievedChunk,
     RetrievalResult,
+    RetrievedChunk,
 )
 from debrief_agent.rag.vectorstore.qdrant_store import qdrant_store_service
 
@@ -21,6 +21,7 @@ _CATEGORY_TO_KNOWLEDGE_TYPE: dict[str, KnowledgeType] = {
     "coaching_guides": KnowledgeType.COACHING_GUIDES,
     "sales_frameworks": KnowledgeType.SALES_FRAMEWORKS,
 }
+
 
 class VectorRetriever:
     """Embed a user query, retrieve nearest Qdrant vectors, and map them to typed models."""
@@ -64,7 +65,6 @@ class VectorRetriever:
         except Exception:
             logger.exception("Vector retrieval failed")
             raise
-
 
     def _embed_query(self, query: str) -> list[float]:
         """Create a vector embedding for the user query."""
@@ -166,5 +166,6 @@ def retrieve(
     query_filter: Filter | None = None,
 ) -> RetrievalResult:
     """Compatibility helper for call sites expecting function-style retrieval."""
-    return vector_retriever.retrieve(query=query, limit=limit, knowledge_type=knowledge_type, query_filter=query_filter)
-
+    return vector_retriever.retrieve(
+        query=query, limit=limit, knowledge_type=knowledge_type, query_filter=query_filter
+    )

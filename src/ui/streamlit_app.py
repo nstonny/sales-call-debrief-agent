@@ -1,7 +1,7 @@
 import os
 
-import streamlit as st
 import requests
+import streamlit as st
 
 # Overridable so the same code works in both topologies. Compose sets
 # DEBRIEF_API_URL to http://api:8000/api/upload, addressing the API by its

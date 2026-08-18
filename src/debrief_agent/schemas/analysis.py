@@ -1,5 +1,4 @@
 from enum import Enum
-from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -25,24 +24,43 @@ class AnalysisResult(BaseModel):
     """
 
     # --- Narrative fields ---
-    summary: Optional[str] = Field(None, description="2–4 sentence narrative summary of the call")
-    next_steps: Optional[str] = Field(None, description="What was agreed as the next step at the end of the call")
-    competitor_mentioned: Optional[str] = Field(None, description="Name of any competitor mentioned, or null")
+    summary: str | None = Field(None, description="2–4 sentence narrative summary of the call")
+    next_steps: str | None = Field(
+        None, description="What was agreed as the next step at the end of the call"
+    )
+    competitor_mentioned: str | None = Field(
+        None, description="Name of any competitor mentioned, or null"
+    )
 
     # --- Structured list fields (LLM returns JSON arrays) ---
-    strengths: Optional[list[str]] = Field(None, description="What the rep did well (each item one concise sentence)")
-    areas_for_improvement: Optional[list[str]] = Field(None, description="Specific coaching points for the rep")
-    action_items: Optional[list[str]] = Field(None, description="Concrete follow-up actions agreed or recommended")
-    objections_raised: Optional[list[str]] = Field(None, description="Objections the prospect raised (e.g. 'pricing too high')")
+    strengths: list[str] | None = Field(
+        None, description="What the rep did well (each item one concise sentence)"
+    )
+    areas_for_improvement: list[str] | None = Field(
+        None, description="Specific coaching points for the rep"
+    )
+    action_items: list[str] | None = Field(
+        None, description="Concrete follow-up actions agreed or recommended"
+    )
+    objections_raised: list[str] | None = Field(
+        None, description="Objections the prospect raised (e.g. 'pricing too high')"
+    )
 
     # --- Scoring ---
-    sentiment: Optional[Sentiment] = Field(None, description="Overall call sentiment: 'positive', 'neutral', or 'negative'")   # "positive" | "neutral" | "negative"
-    score: Optional[float] = Field(None, ge=0.0, le=5.0, description="Overall rep performance score from 0.0 to 5.0")  # 0.0 – 5.0
+    sentiment: Sentiment | None = Field(
+        None, description="Overall call sentiment: 'positive', 'neutral', or 'negative'"
+    )  # "positive" | "neutral" | "negative"
+    score: float | None = Field(
+        None, ge=0.0, le=5.0, description="Overall rep performance score from 0.0 to 5.0"
+    )  # 0.0 – 5.0
 
     model_config = {"from_attributes": True}  # allows building from ORM Analysis object
 
     @field_validator(
-        "summary", "next_steps", "competitor_mentioned", "sentiment",
+        "summary",
+        "next_steps",
+        "competitor_mentioned",
+        "sentiment",
         mode="before",
     )
     @classmethod

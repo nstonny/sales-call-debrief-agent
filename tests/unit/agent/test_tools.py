@@ -17,8 +17,8 @@ from debrief_agent.rag.agent.tools import (
 )
 from debrief_agent.rag.retrieval.retrieval_models import (
     KnowledgeType,
-    RetrievedChunk,
     RetrievalResult,
+    RetrievedChunk,
 )
 
 

@@ -1,12 +1,12 @@
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, Final
+from typing import Final
 
 from langchain_core.documents import Document
 
 from debrief_agent.rag.loaders.docx_loader import DOCXLoaderService
 from debrief_agent.rag.loaders.pdf_loader import PDFLoaderService
 from debrief_agent.rag.loaders.text_loader import TextLoaderService
-
 
 LoaderFn = Callable[[Path], list[Document]]
 

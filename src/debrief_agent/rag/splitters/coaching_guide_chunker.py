@@ -138,15 +138,11 @@ class CoachingGuideChunker:
 
             # Extremely long paragraphs are sentence-split to keep chunk size bounded.
             sentence_parts = [
-                part.strip()
-                for part in re.split(r"(?<=[.!?])\s+", paragraph)
-                if part.strip()
+                part.strip() for part in re.split(r"(?<=[.!?])\s+", paragraph) if part.strip()
             ]
             sentence_chunk = ""
             for part in sentence_parts:
-                candidate_sentence = (
-                    f"{sentence_chunk} {part}".strip() if sentence_chunk else part
-                )
+                candidate_sentence = f"{sentence_chunk} {part}".strip() if sentence_chunk else part
                 if len(candidate_sentence) <= self._max_chars:
                     sentence_chunk = candidate_sentence
                 else:
@@ -192,4 +188,3 @@ class CoachingGuideChunker:
         with output_path.open("w", encoding="utf-8") as fp:
             for row in rows:
                 fp.write(json.dumps(row, ensure_ascii=True) + "\n")
-
