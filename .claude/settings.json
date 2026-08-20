@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=$(python3 -c \"\nimport json, sys\ntry:\n    d = json.load(sys.stdin)\nexcept Exception:\n    d = {}\nprint((d.get('tool_response') or {}).get('filePath') or (d.get('tool_input') or {}).get('file_path') or '')\n\")\ncase \"$f\" in\n  *.py) uv run ruff check --fix \"$f\" >/dev/null 2>&1; uv run ruff format \"$f\" >/dev/null 2>&1 ;;\nesac\ntrue\n",
+            "statusMessage": "Running ruff on edited file..."
+          }
+        ]
+      }
+    ]
+  }
+}

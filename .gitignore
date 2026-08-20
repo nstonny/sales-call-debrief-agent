@@ -147,6 +147,9 @@ activemq-data/
 # SageMath parsed files
 *.sage.py
 
+# Claude Code: personal overrides, not the team-shared .claude/settings.json.
+.claude/settings.local.json
+
 # Environments
 .env
 # Also ignore variants like .env.local and .env.bak, which carry the same

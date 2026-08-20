@@ -71,6 +71,27 @@ flowchart TD
 | UI | `src/ui/streamlit_app.py` |
 
 
+## Developer Tooling
+
+A project-level hook in `.claude/settings.json` runs automatically after every
+Python file edit made through Claude Code:
+
+```zsh
+uv run ruff check --fix <edited file>
+uv run ruff format <edited file>
+```
+
+That's the same `ruff check` and `ruff format --check` CI enforces on every push
+(see [Testing](#testing)), applied continuously during editing rather than
+caught after the fact. The hook reads the edited file's path from Claude Code's
+`PostToolUse` event, fixes what ruff can fix automatically, and leaves anything
+it can't (a genuine judgment call, like a missing `raise ... from exc`) for a
+human to resolve — it never blocks or fails the edit itself.
+
+`.claude/settings.local.json`, if present, holds personal overrides and is
+gitignored; the hook itself lives in the committed `.claude/settings.json` so
+it applies for anyone working in this repo with Claude Code.
+
 ## Quick Start with Docker (recommended)
 
 The only prerequisites are Docker Desktop (or Docker Engine with the Compose
