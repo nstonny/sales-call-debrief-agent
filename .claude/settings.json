@@ -11,6 +11,18 @@
           }
         ]
       }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -c \"\nimport json, sys\nfrom pathlib import Path\n\ntry:\n    d = json.load(sys.stdin)\nexcept Exception:\n    sys.exit(0)\n\npath = (d.get('tool_input') or {}).get('file_path')\nif not path:\n    sys.exit(0)\n\np = Path(path)\nreason = None\n\nif p.name == '.env':\n    reason = '.env holds live secrets -- edit it directly, not through Claude Code.'\nelif p.name == 'uv.lock':\n    reason = 'uv.lock is generated -- run \\`uv lock\\` or \\`uv sync\\`, do not hand-edit it.'\nelse:\n    parts = p.parts\n    is_migration = any(\n        parts[i] == 'migrations' and parts[i + 1] == 'versions'\n        for i in range(len(parts) - 1)\n    ) and p.suffix == '.py'\n    if is_migration:\n        reason = 'migrations/versions/ is applied history -- use \\`alembic revision\\`, do not hand-edit an existing migration.'\n\nif reason:\n    print(f'Blocked: {path}', file=sys.stderr)\n    print(reason, file=sys.stderr)\n    sys.exit(2)\nsys.exit(0)\n\"\n",
+            "statusMessage": "Checking protected files..."
+          }
+        ]
+      }
     ]
   }
 }
