@@ -19,7 +19,9 @@ not whether to open it.
    the changed path), under ~70 characters.
 
 3. **Body — `## Summary`**: 1–3 bullets covering what changed and why,
-   grouped by concern if the PR spans multiple areas.
+   grouped by concern if the PR spans multiple areas. Keep each bullet as
+   concise as possible without dropping information a reviewer actually
+   needs — trim words, not substance.
 
 4. **Body — `## Test plan`**: don't restate `ruff check` / `ruff format` /
    `pytest` — those are the CI `lint` and `test` jobs, and GitHub already
@@ -38,7 +40,9 @@ not whether to open it.
    CI gates.
 
 5. **Body — `## Notes for reviewers`** (omit the whole section if none of
-   these match): add one bullet per condition the diff actually touches —
+   these match): add one bullet per condition the diff actually touches,
+   kept as concise as possible without dropping the information a
+   reviewer needs —
    - touches `tests/` → confirm no live-service dependency was introduced
      (tests must stay offline)
    - touches `core/config.py` → flag that it raises at import time, so

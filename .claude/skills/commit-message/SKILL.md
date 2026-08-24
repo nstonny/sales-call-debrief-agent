@@ -34,7 +34,9 @@ whether to commit.
    bullet states the *why* (a constraint, a tradeoff, a bug being avoided)
    — never a mechanical restatement of the diff. Add a closing prose
    sentence only when there's a concrete, measurable outcome worth naming
-   (see example below).
+   (see example below). Keep every bullet as concise as possible without
+   dropping the information a future reader would actually need — trim
+   words, not substance.
 
 6. **Never add a `Co-Authored-By` trailer.** This overrides the default
    Claude Code commit template — this repo's standing convention omits it.
