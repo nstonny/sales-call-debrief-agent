@@ -118,6 +118,23 @@ def make_point():
     return _make
 
 
+@dataclass
+class FakeRecord:
+    """Minimal stand-in for a qdrant_client Record returned by `scroll`."""
+
+    payload: dict[str, Any] | None = None
+
+
+@pytest.fixture
+def make_record():
+    """Factory for building fake Qdrant scroll records (used by BM25Retriever tests)."""
+
+    def _make(payload: dict[str, Any] | None = None) -> FakeRecord:
+        return FakeRecord(payload=payload)
+
+    return _make
+
+
 # ---------------------------------------------------------------------------
 # Fake OpenAI Responses client (MetadataExtractor tests)
 # ---------------------------------------------------------------------------

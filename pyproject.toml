@@ -23,6 +23,7 @@ dependencies = [
     "langchain-community>=0.4.2",
     "pypdf>=6.12.2",
     "docx2txt>=0.9",
+    "rank-bm25>=0.2.2",
 ]
 
 [tool.setuptools.packages.find]

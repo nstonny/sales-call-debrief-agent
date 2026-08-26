@@ -3,11 +3,11 @@ import os
 
 from langchain.tools import tool
 
+from debrief_agent.rag.retrieval.hybrid_retriever import (
+    hybrid_retriever,
+)
 from debrief_agent.rag.retrieval.retrieval_models import (
     KnowledgeType,
-)
-from debrief_agent.rag.retrieval.vector_retriever import (
-    vector_retriever,
 )
 
 logger = logging.getLogger(__name__)
@@ -45,7 +45,7 @@ def _log_retrieved_chunks(knowledge_type: KnowledgeType, query: str, chunks: lis
 
 def _retrieve_by_knowledge_type(query: str, knowledge_type: KnowledgeType) -> str:
     """Retrieve top chunks for a specific knowledge category and serialize them."""
-    result = vector_retriever.retrieve(
+    result = hybrid_retriever.retrieve(
         query=query,
         limit=10,
         knowledge_type=knowledge_type,

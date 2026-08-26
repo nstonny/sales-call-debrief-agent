@@ -1,7 +1,7 @@
 """Unit tests for the RAG retrieval tools.
 
 Covers the shared `_retrieve_by_knowledge_type` serialization logic, the
-chunk-logging env toggle, and the three `@tool` entrypoints. The vector
+chunk-logging env toggle, and the three `@tool` entrypoints. The hybrid
 retriever is patched so no OpenAI/Qdrant calls are made.
 """
 
@@ -63,7 +63,7 @@ def test_retrieve_joins_chunk_texts(mocker):
         query="q",
         chunks=[_chunk("first chunk"), _chunk("second chunk")],
     )
-    retrieve = mocker.patch.object(tools.vector_retriever, "retrieve", return_value=result)
+    retrieve = mocker.patch.object(tools.hybrid_retriever, "retrieve", return_value=result)
 
     output = _retrieve_by_knowledge_type("q", KnowledgeType.SALES_FRAMEWORKS)
 
@@ -77,7 +77,7 @@ def test_retrieve_joins_chunk_texts(mocker):
 
 def test_retrieve_skips_empty_chunk_text(mocker):
     result = RetrievalResult(query="q", chunks=[_chunk("real"), _chunk("")])
-    mocker.patch.object(tools.vector_retriever, "retrieve", return_value=result)
+    mocker.patch.object(tools.hybrid_retriever, "retrieve", return_value=result)
 
     output = _retrieve_by_knowledge_type("q", KnowledgeType.COACHING_GUIDES)
     assert output == "real"
@@ -85,7 +85,7 @@ def test_retrieve_skips_empty_chunk_text(mocker):
 
 def test_retrieve_returns_sentinel_when_no_chunks(mocker):
     result = RetrievalResult(query="q", chunks=[])
-    mocker.patch.object(tools.vector_retriever, "retrieve", return_value=result)
+    mocker.patch.object(tools.hybrid_retriever, "retrieve", return_value=result)
 
     output = _retrieve_by_knowledge_type("q", KnowledgeType.CALL_EXAMPLES)
     assert output == "No relevant context found in the selected knowledge base section."
@@ -106,7 +106,7 @@ def test_retrieve_returns_sentinel_when_no_chunks(mocker):
 )
 def test_tool_routes_to_expected_knowledge_type(mocker, tool_obj, expected_type):
     result = RetrievalResult(query="q", chunks=[_chunk("body", expected_type)])
-    retrieve = mocker.patch.object(tools.vector_retriever, "retrieve", return_value=result)
+    retrieve = mocker.patch.object(tools.hybrid_retriever, "retrieve", return_value=result)
 
     output = tool_obj.invoke({"query": "objection handling"})
 

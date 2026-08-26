@@ -1,7 +1,7 @@
 from typing import Any, cast
 
 from langchain_qdrant import QdrantVectorStore
-from qdrant_client.http.models import Filter, ScoredPoint
+from qdrant_client.http.models import Filter, Record, ScoredPoint
 
 from debrief_agent.core.qdrant import (
     get_sync_qdrant_client,
@@ -44,6 +44,31 @@ class QdrantStoreService:
             with_payload=True,
         )
         return response.points
+
+    def scroll_all(self, query_filter: Filter | None = None, page_size: int = 256) -> list[Record]:
+        """Fetch every point matching a filter, paging through the full collection.
+
+        Used to build an in-memory BM25 corpus per knowledge type; the knowledge
+        base is small enough (a few dozen chunks per category) that loading it
+        whole is cheap.
+        """
+        client = get_sync_qdrant_client()
+        collection_name = get_sync_qdrant_collection_name()
+        records: list[Record] = []
+        offset = None
+        while True:
+            points, offset = client.scroll(
+                collection_name=collection_name,
+                scroll_filter=query_filter,
+                limit=page_size,
+                with_payload=True,
+                with_vectors=False,
+                offset=offset,
+            )
+            records.extend(points)
+            if offset is None:
+                break
+        return records
 
 
 qdrant_store_service = QdrantStoreService()
