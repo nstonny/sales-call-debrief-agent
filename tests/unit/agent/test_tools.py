@@ -2,13 +2,18 @@
 
 Covers the shared `_retrieve_by_knowledge_type` serialization logic, the
 chunk-logging env toggle, and the three `@tool` entrypoints. The hybrid
-retriever is patched so no OpenAI/Qdrant calls are made.
+retriever and the LLM reranker are both patched so no OpenAI/Qdrant calls
+are made; the reranker patch defaults to an identity pass-through (truncated
+to `top_n`) so these tests exercise the join/serialize logic, not reranking
+itself -- that's covered in `test_rerank_service.py`.
 """
 
 import pytest
 
 from debrief_agent.rag.agent import tools
 from debrief_agent.rag.agent.tools import (
+    FINAL_RESULT_COUNT,
+    RERANK_CANDIDATE_POOL,
     _is_chunk_logging_enabled,
     _retrieve_by_knowledge_type,
     retrieve_call_examples,
@@ -29,6 +34,21 @@ def _chunk(text: str, knowledge_type=KnowledgeType.SALES_FRAMEWORKS) -> Retrieve
         source="doc.md",
         knowledge_type=knowledge_type,
     )
+
+
+def _patch_retrieval(mocker, chunks):
+    """Patch hybrid retrieval to return `chunks`, and the reranker to pass them through."""
+    retrieve = mocker.patch.object(
+        tools.hybrid_retriever,
+        "retrieve",
+        return_value=RetrievalResult(query="q", chunks=chunks),
+    )
+    rerank = mocker.patch.object(
+        tools.chunk_reranker,
+        "rerank",
+        side_effect=lambda query, chunks, top_n: chunks[:top_n],
+    )
+    return retrieve, rerank
 
 
 # ---------------------------------------------------------------------------
@@ -59,33 +79,28 @@ def test_chunk_logging_disabled_by_default(monkeypatch):
 
 
 def test_retrieve_joins_chunk_texts(mocker):
-    result = RetrievalResult(
-        query="q",
-        chunks=[_chunk("first chunk"), _chunk("second chunk")],
-    )
-    retrieve = mocker.patch.object(tools.hybrid_retriever, "retrieve", return_value=result)
+    retrieve, rerank = _patch_retrieval(mocker, [_chunk("first chunk"), _chunk("second chunk")])
 
     output = _retrieve_by_knowledge_type("q", KnowledgeType.SALES_FRAMEWORKS)
 
     assert output == "first chunk\n\nsecond chunk"
     retrieve.assert_called_once_with(
         query="q",
-        limit=10,
+        limit=RERANK_CANDIDATE_POOL,
         knowledge_type=KnowledgeType.SALES_FRAMEWORKS,
     )
+    assert rerank.call_args.kwargs["top_n"] == FINAL_RESULT_COUNT
 
 
 def test_retrieve_skips_empty_chunk_text(mocker):
-    result = RetrievalResult(query="q", chunks=[_chunk("real"), _chunk("")])
-    mocker.patch.object(tools.hybrid_retriever, "retrieve", return_value=result)
+    _patch_retrieval(mocker, [_chunk("real"), _chunk("")])
 
     output = _retrieve_by_knowledge_type("q", KnowledgeType.COACHING_GUIDES)
     assert output == "real"
 
 
 def test_retrieve_returns_sentinel_when_no_chunks(mocker):
-    result = RetrievalResult(query="q", chunks=[])
-    mocker.patch.object(tools.hybrid_retriever, "retrieve", return_value=result)
+    _patch_retrieval(mocker, [])
 
     output = _retrieve_by_knowledge_type("q", KnowledgeType.CALL_EXAMPLES)
     assert output == "No relevant context found in the selected knowledge base section."
@@ -105,8 +120,7 @@ def test_retrieve_returns_sentinel_when_no_chunks(mocker):
     ],
 )
 def test_tool_routes_to_expected_knowledge_type(mocker, tool_obj, expected_type):
-    result = RetrievalResult(query="q", chunks=[_chunk("body", expected_type)])
-    retrieve = mocker.patch.object(tools.hybrid_retriever, "retrieve", return_value=result)
+    retrieve, _rerank = _patch_retrieval(mocker, [_chunk("body", expected_type)])
 
     output = tool_obj.invoke({"query": "objection handling"})
 

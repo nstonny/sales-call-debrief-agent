@@ -3,6 +3,9 @@ import os
 
 from langchain.tools import tool
 
+from debrief_agent.rag.agent.services.rerank import (
+    chunk_reranker,
+)
 from debrief_agent.rag.retrieval.hybrid_retriever import (
     hybrid_retriever,
 )
@@ -11,6 +14,11 @@ from debrief_agent.rag.retrieval.retrieval_models import (
 )
 
 logger = logging.getLogger(__name__)
+
+# Widen the fused candidate pool beyond the final result count so the LLM
+# reranker has real choices to rank, not just the hybrid retriever's own top-N.
+RERANK_CANDIDATE_POOL = 25
+FINAL_RESULT_COUNT = 10
 
 
 def _is_chunk_logging_enabled() -> bool:
@@ -44,23 +52,28 @@ def _log_retrieved_chunks(knowledge_type: KnowledgeType, query: str, chunks: lis
 
 
 def _retrieve_by_knowledge_type(query: str, knowledge_type: KnowledgeType) -> str:
-    """Retrieve top chunks for a specific knowledge category and serialize them."""
+    """Retrieve, rerank, and serialize top chunks for a specific knowledge category."""
     result = hybrid_retriever.retrieve(
         query=query,
-        limit=10,
+        limit=RERANK_CANDIDATE_POOL,
         knowledge_type=knowledge_type,
+    )
+    chunks = chunk_reranker.rerank(
+        query=query,
+        chunks=result.chunks,
+        top_n=FINAL_RESULT_COUNT,
     )
 
     _log_retrieved_chunks(
         knowledge_type=knowledge_type,
         query=query,
-        chunks=result.chunks,
+        chunks=chunks,
     )
 
-    if not result.chunks:
+    if not chunks:
         return "No relevant context found in the selected knowledge base section."
 
-    return "\n\n".join(chunk.text for chunk in result.chunks if chunk.text)
+    return "\n\n".join(chunk.text for chunk in chunks if chunk.text)
 
 
 @tool

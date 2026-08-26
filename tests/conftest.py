@@ -168,3 +168,33 @@ def make_openai_client():
         return FakeOpenAIClient(responses=FakeResponsesAPI(result=result, exc=exc))
 
     return _make
+
+
+@dataclass
+class FakeSyncResponsesAPI:
+    """Stub for `client.responses` exposing a sync `parse` (ChunkReranker tests)."""
+
+    result: Any = None
+    exc: Exception | None = None
+
+    def parse(self, **_kwargs: Any) -> Any:
+        if self.exc is not None:
+            raise self.exc
+        return self.result
+
+
+@dataclass
+class FakeSyncOpenAIClient:
+    """Stub sync OpenAI client injectable into `ChunkReranker(client=...)`."""
+
+    responses: FakeSyncResponsesAPI = field(default_factory=FakeSyncResponsesAPI)
+
+
+@pytest.fixture
+def make_sync_openai_client():
+    """Factory that builds a fake sync OpenAI client returning `result` or raising `exc`."""
+
+    def _make(result: Any = None, exc: Exception | None = None) -> FakeSyncOpenAIClient:
+        return FakeSyncOpenAIClient(responses=FakeSyncResponsesAPI(result=result, exc=exc))
+
+    return _make
