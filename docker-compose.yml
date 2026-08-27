@@ -130,8 +130,8 @@ services:
       # Merge the shared block, then add the one value specific to this service.
       <<: *app-env
       # Resolves the api service by name. streamlit_app.py falls back to
-      # localhost:8000 when this is unset, which is what keeps `uv run` working.
-      DEBRIEF_API_URL: http://api:8000/api/upload
+      # localhost:8000/api when this is unset, which is what keeps `uv run` working.
+      DEBRIEF_API_URL: http://api:8000/api
     volumes:
       - ./src:/app/src
     depends_on:

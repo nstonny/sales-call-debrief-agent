@@ -104,8 +104,8 @@ echo "OPENAI_API_KEY=sk-..." > .env
 docker compose up
 ```
 
-Then open **`http://localhost:8501`** and upload a transcript from
-`src/data/transcripts/`.
+Then open **`http://localhost:8501`** and pick a transcript from the sidebar —
+the app lists the samples bundled in `src/data/transcripts/` for you.
 
 `OPENAI_API_KEY` is the only variable required. `docker-compose.yml` supplies
 `DATABASE_URL` and `QDRANT_URL` itself, because inside Compose they must address

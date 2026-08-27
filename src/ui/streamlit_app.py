@@ -4,10 +4,10 @@ import requests
 import streamlit as st
 
 # Overridable so the same code works in both topologies. Compose sets
-# DEBRIEF_API_URL to http://api:8000/api/upload, addressing the API by its
+# DEBRIEF_API_URL to http://api:8000/api, addressing the API by its
 # service name -- inside the UI container, "localhost" is the UI container
 # itself. The default preserves the native `uv run streamlit` workflow.
-API_URL = os.getenv("DEBRIEF_API_URL", "http://localhost:8000/api/upload")
+API_BASE_URL = os.getenv("DEBRIEF_API_URL", "http://localhost:8000/api")
 
 
 def render_dashboard(result: dict) -> None:
@@ -109,27 +109,53 @@ def render_dashboard(result: dict) -> None:
         st.json(result)
 
 
-# --- Sidebar: upload form ---
+@st.cache_data(ttl=30)
+def fetch_transcript_list() -> list[str]:
+    """Filenames of sample transcripts available server-side, via the API."""
+    response = requests.get(f"{API_BASE_URL}/transcripts", timeout=10)
+    response.raise_for_status()
+    return response.json()
+
+
+@st.cache_data(ttl=30)
+def fetch_transcript_content(filename: str) -> str:
+    """Raw text of a sample transcript, via the API, for the preview panel."""
+    response = requests.get(f"{API_BASE_URL}/transcripts/{filename}", timeout=10)
+    response.raise_for_status()
+    return response.json()["content"]
+
+
+# --- Sidebar: transcript selection ---
 with st.sidebar:
-    st.header("📂 Upload Transcript")
+    st.header("📂 Select Transcript")
 
-    uploaded_file = st.file_uploader(
-        "Select a sales call transcript (.txt)",
-        type=["txt"],
-        accept_multiple_files=False,
-    )
+    selected_filename = None
+    try:
+        transcripts = fetch_transcript_list()
+    except requests.exceptions.RequestException:
+        st.error("❌ Could not reach the API. Is it running?")
+        transcripts = []
 
-    # Clear input fields when a new file is uploaded
+    if not transcripts:
+        st.info("No sample transcripts found.")
+    else:
+        selected_filename = st.selectbox("Choose a sales call transcript", options=transcripts)
+
+    # Clear input fields when a different transcript is selected
     if "last_filename" not in st.session_state:
         st.session_state.last_filename = None
 
-    if uploaded_file and uploaded_file.name != st.session_state.last_filename:
-        st.session_state.last_filename = uploaded_file.name
+    if selected_filename and selected_filename != st.session_state.last_filename:
+        st.session_state.last_filename = selected_filename
         st.session_state.company = ""
         st.session_state.deal_value = None
 
-    if not uploaded_file:
-        st.info("Waiting for file upload...")
+    if selected_filename:
+        with st.expander("🔍 Preview transcript"):
+            try:
+                st.text(fetch_transcript_content(selected_filename))
+            except requests.exceptions.RequestException:
+                st.error("Could not load transcript preview.")
 
     company = st.text_input("Company name (optional)", key="company")
     deal_value = st.number_input(
@@ -141,24 +167,23 @@ with st.sidebar:
         key="deal_value",
     )
 
-    analyse_clicked = st.button("Analyze Call", disabled=not uploaded_file)
+    analyse_clicked = st.button("Analyze Call", disabled=not selected_filename)
 
 
 # --- Main area: title + results ---
 st.title("📞 Sales Call Debrief Agent")
 
-if analyse_clicked and uploaded_file:
+if analyse_clicked and selected_filename:
     with st.spinner("Analysing transcript..."):
-        form_data = {}
+        payload = {}
         if company:
-            form_data["company"] = company
+            payload["company"] = company
         if deal_value:
-            form_data["deal_value"] = deal_value
+            payload["deal_value"] = deal_value
 
         response = requests.post(
-            API_URL,
-            files={"file": (uploaded_file.name, uploaded_file.getvalue(), "text/plain")},
-            data=form_data,
+            f"{API_BASE_URL}/transcripts/{selected_filename}/analyze",
+            json=payload,
         )
 
     if response.status_code == 200:
@@ -170,12 +195,12 @@ if analyse_clicked and uploaded_file:
             detail = response.json().get("detail", "Unknown error")
         except Exception:
             detail = response.text or "Unknown error — server returned no response body"
-        st.error(f"❌ Upload failed ({response.status_code}): {detail}")
-elif not uploaded_file:
+        st.error(f"❌ Analysis failed ({response.status_code}): {detail}")
+elif not selected_filename:
     st.markdown(
         """
         ### Welcome 👋
-        Upload a sales call transcript using the sidebar to get started.
+        Select a sales call transcript from the sidebar to get started.
 
         The agent will automatically:
         - Extract call metadata (rep, contact, deal stage)

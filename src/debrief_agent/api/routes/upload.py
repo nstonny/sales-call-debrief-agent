@@ -53,9 +53,32 @@ async def upload_transcript(
     if not transcript_text.strip():
         raise HTTPException(status_code=422, detail="Uploaded file is empty.")
 
+    return await persist_call_and_analyze(
+        filename=file.filename,
+        transcript_text=transcript_text,
+        company=company,
+        deal_value=deal_value,
+        db=db,
+        trace_name="api.upload_transcript",
+    )
+
+
+async def persist_call_and_analyze(
+    filename: str,
+    transcript_text: str,
+    company: str | None,
+    deal_value: float | None,
+    db: AsyncSession,
+    trace_name: str,
+) -> CallResponse:
+    """Persist a Call row, run extraction + analysis, and return the populated record.
+
+    Shared by the upload route and the transcript-library analyze route so both
+    entry points run identical extraction/analysis/persistence logic.
+    """
     # --- Save the transcript row first so we have a call ID ---
     call = Call(
-        filename=file.filename,
+        filename=filename,
         transcript_text=transcript_text,
         company=company or None,
         deal_value=deal_value,
@@ -69,7 +92,7 @@ async def upload_transcript(
     session_id = str(call.id)
 
     # --- Run LLM extraction + analysis with shared tracing session context ---
-    with propagate_trace_session(session_id=session_id, trace_name="api.upload_transcript"):
+    with propagate_trace_session(session_id=session_id, trace_name=trace_name):
         # Raises HTTPException(502) on failure, which causes get_db to roll back
         metadata = await metadata_extractor.extract(transcript_text, session_id=session_id)
 
