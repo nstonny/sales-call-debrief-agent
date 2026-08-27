@@ -13,11 +13,19 @@ whether to commit.
    back to `git diff` if nothing is staged) to understand what changed and
    why — not just which lines moved.
 
-2. **Pick `type`** from the set this repo actually uses: `feat`, `fix`,
+2. **Check whether `README.md` needs updating.** Compare it against the
+   changes from step 1 — does it describe commands, setup steps,
+   architecture, or behavior that the diff has changed, added, or made
+   obsolete? Update it only when it's actually out of sync; most changes
+   don't require a README edit. When it does, edit the minimum needed to
+   re-sync it and keep it concise — no new sections or elaboration beyond
+   what's necessary, since README.md is meant to stay short.
+
+3. **Pick `type`** from the set this repo actually uses: `feat`, `fix`,
    `docs`, `build`, `refactor`, `test`, `chore`, `ci`, `perf`. Base it on
    the nature of the change, not the file extension.
 
-3. **Pick `scope`** — a short noun for the affected area, inferred from the
+4. **Pick `scope`** — a short noun for the affected area, inferred from the
    changed path:
    - `.claude/hooks/*`, `.claude/settings*.json` → `dev`
    - `src/debrief_agent/rag/*` → `rag`
@@ -27,10 +35,10 @@ whether to commit.
    - `pyproject.toml`, `uv.lock`, `Dockerfile*`, `docker-compose*` → `build`
    - Falls outside these → pick the closest top-level package/dir name.
 
-4. **Subject line**: `type(scope): imperative summary`, lowercase, no
+5. **Subject line**: `type(scope): imperative summary`, lowercase, no
    trailing period, short enough to read in `git log --oneline`.
 
-5. **Body**: blank line, then `- ` bullets wrapped at ~72 characters. Each
+6. **Body**: blank line, then `- ` bullets wrapped at ~72 characters. Each
    bullet states the *why* (a constraint, a tradeoff, a bug being avoided)
    — never a mechanical restatement of the diff. Add a closing prose
    sentence only when there's a concrete, measurable outcome worth naming
@@ -38,10 +46,10 @@ whether to commit.
    dropping the information a future reader would actually need — trim
    words, not substance.
 
-6. **Never add a `Co-Authored-By` trailer.** This overrides the default
+7. **Never add a `Co-Authored-By` trailer.** This overrides the default
    Claude Code commit template — this repo's standing convention omits it.
 
-7. **Write via heredoc** as usual:
+8. **Write via heredoc** as usual:
    ```zsh
    git commit -m "$(cat <<'EOF'
    type(scope): subject
