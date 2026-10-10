@@ -166,8 +166,24 @@ without a rebuild — `--build` is only needed when `pyproject.toml`, `uv.lock`,
 the `Dockerfile` change.
 
 The Compose Postgres credentials are hardcoded development values
-(`debrief`/`debrief`). This stack is a local development and demo environment,
-not a deployable configuration.
+(`debrief`/`debrief`). This Compose stack specifically is a local development
+and demo environment, not a deployable configuration — for an actual
+deployment, see below.
+
+## Deployment (Azure)
+
+The app runs on Azure Container Apps, deployed via GitHub Actions. Structure
+(resource group, Postgres, Qdrant, the Container Apps/Jobs) lives in
+`infra/` as Bicep, applied through `.github/workflows/infra.yml`
+(`workflow_dispatch` only — rare, higher-risk changes). Routine releases go
+through the `deploy` job in `.github/workflows/ci.yml`, which builds and
+pushes the image, runs `migrate` then `seed` as one-shot Container Apps Jobs,
+then rolls `api`/`ui` to the new image — triggered automatically on every
+push to `main` once CI passes.
+
+See `infra/README.md` for the one-time bootstrap (resource group, GitHub
+OIDC App Registration, required GitHub Environment secrets) and the
+teardown/redeploy cycle.
 
 ## Prerequisites (native run)
 

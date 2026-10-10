@@ -1,0 +1,61 @@
+name: Infra
+
+# Manual only -- structural changes here can resize/relocate/delete a
+# database or storage account, so this never runs on a push the way the app
+# CD `deploy` job in ci.yml does. See infra/README.md for the bootstrap this
+# depends on (resource group, App Registration, federated credential, role
+# assignment -- all created once, by hand, before this workflow can run).
+on:
+  workflow_dispatch:
+    inputs:
+      whatIf:
+        description: "Preview only (az deployment group what-if) instead of applying"
+        type: boolean
+        default: true
+
+jobs:
+  apply:
+    name: ${{ inputs.whatIf && 'What-If preview' || 'Apply' }}
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: What-If preview
+        if: ${{ inputs.whatIf }}
+        run: |
+          az deployment group what-if \
+            --resource-group rg-debrief-agent-prod \
+            --template-file infra/main.bicep \
+            --parameters infra/main.parameters.json \
+            --parameters postgresAdminPassword="${{ secrets.POSTGRES_ADMIN_PASSWORD }}" \
+                          openAiApiKey="${{ secrets.OPENAI_API_KEY }}" \
+                          qdrantApiKey="${{ secrets.QDRANT_API_KEY }}" \
+                          langfusePublicKey="${{ secrets.LANGFUSE_PUBLIC_KEY }}" \
+                          langfuseSecretKey="${{ secrets.LANGFUSE_SECRET_KEY }}" \
+                          langfuseBaseUrl="${{ secrets.LANGFUSE_BASE_URL }}"
+
+      - name: Apply
+        if: ${{ !inputs.whatIf }}
+        run: |
+          az deployment group create \
+            --resource-group rg-debrief-agent-prod \
+            --template-file infra/main.bicep \
+            --parameters infra/main.parameters.json \
+            --parameters postgresAdminPassword="${{ secrets.POSTGRES_ADMIN_PASSWORD }}" \
+                          openAiApiKey="${{ secrets.OPENAI_API_KEY }}" \
+                          qdrantApiKey="${{ secrets.QDRANT_API_KEY }}" \
+                          langfusePublicKey="${{ secrets.LANGFUSE_PUBLIC_KEY }}" \
+                          langfuseSecretKey="${{ secrets.LANGFUSE_SECRET_KEY }}" \
+                          langfuseBaseUrl="${{ secrets.LANGFUSE_BASE_URL }}"

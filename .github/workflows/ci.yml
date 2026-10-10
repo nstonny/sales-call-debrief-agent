@@ -84,3 +84,87 @@ jobs:
           assert '/api/upload' in app.openapi()['paths']
           print('image OK:', CallAnalyzer.__module__)
           "
+
+  deploy:
+    name: Deploy to Azure Container Apps
+    needs: [lint, test, docker]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      id-token: write
+      contents: read
+
+    env:
+      RESOURCE_GROUP: rg-debrief-agent-prod
+      ACR_NAME: acrdebriefagent
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build and push image
+        run: |
+          az acr login --name "$ACR_NAME"
+          IMAGE="$ACR_NAME.azurecr.io/debrief-agent:${{ github.sha }}"
+          docker build -t "$IMAGE" .
+          docker push "$IMAGE"
+          echo "IMAGE=$IMAGE" >> "$GITHUB_ENV"
+
+      # migrate before seed (mirrors Compose's depends_on ordering); both
+      # must succeed before api/ui roll -- new code should never serve
+      # traffic against an unmigrated schema or an unseeded vector store.
+      - name: Run migrate job
+        run: |
+          az containerapp job update -n caj-debrief-migrate -g "$RESOURCE_GROUP" --image "$IMAGE"
+          EXEC_NAME=$(az containerapp job start -n caj-debrief-migrate -g "$RESOURCE_GROUP" --query name -o tsv)
+          echo "migrate execution: $EXEC_NAME"
+          for i in $(seq 1 30); do
+            STATUS=$(az containerapp job execution show -n caj-debrief-migrate -g "$RESOURCE_GROUP" --job-execution-name "$EXEC_NAME" --query properties.status -o tsv)
+            echo "migrate status: $STATUS"
+            [ "$STATUS" = "Succeeded" ] && exit 0
+            [ "$STATUS" = "Failed" ] && { echo "::error::migrate job failed"; exit 1; }
+            sleep 10
+          done
+          echo "::error::migrate job timed out"
+          exit 1
+
+      - name: Run seed job
+        run: |
+          az containerapp job update -n caj-debrief-seed -g "$RESOURCE_GROUP" --image "$IMAGE"
+          EXEC_NAME=$(az containerapp job start -n caj-debrief-seed -g "$RESOURCE_GROUP" --query name -o tsv)
+          echo "seed execution: $EXEC_NAME"
+          for i in $(seq 1 60); do
+            STATUS=$(az containerapp job execution show -n caj-debrief-seed -g "$RESOURCE_GROUP" --job-execution-name "$EXEC_NAME" --query properties.status -o tsv)
+            echo "seed status: $STATUS"
+            [ "$STATUS" = "Succeeded" ] && exit 0
+            [ "$STATUS" = "Failed" ] && { echo "::error::seed job failed"; exit 1; }
+            sleep 10
+          done
+          echo "::error::seed job timed out"
+          exit 1
+
+      - name: Roll api and ui to the new image
+        run: |
+          az containerapp update -n ca-debrief-api -g "$RESOURCE_GROUP" --image "$IMAGE"
+          az containerapp update -n ca-debrief-ui -g "$RESOURCE_GROUP" --image "$IMAGE"
+
+      - name: Smoke test
+        run: |
+          API_FQDN=$(az containerapp show -n ca-debrief-api -g "$RESOURCE_GROUP" --query properties.configuration.ingress.fqdn -o tsv)
+          UI_FQDN=$(az containerapp show -n ca-debrief-ui -g "$RESOURCE_GROUP" --query properties.configuration.ingress.fqdn -o tsv)
+          for url in "https://$API_FQDN/docs" "https://$UI_FQDN/"; do
+            echo "checking $url"
+            for i in $(seq 1 12); do
+              CODE=$(curl -s -o /dev/null -w '%{http_code}' "$url" || echo 000)
+              [ "$CODE" = "200" ] && { echo "$url OK"; break; }
+              if [ "$i" = "12" ]; then echo "::error::$url never returned 200 (last: $CODE)"; exit 1; fi
+              sleep 10
+            done
+          done
