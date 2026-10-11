@@ -10,6 +10,14 @@ targetScope = 'resourceGroup'
 
 param location string = 'eastus2'
 
+// Separate from `location`: this subscription's demo/sponsorship offer
+// rejects Burstable Postgres Flexible Server SKUs in eastus2
+// (SkuNotAvailable) even though every other resource here provisions fine
+// there -- confirmed by a direct `az postgres flexible-server create` probe
+// against several regions. westus2 accepted it. Everything else stays in
+// `location` since only Postgres hit this restriction.
+param postgresLocation string = 'westus2'
+
 param acrName string = 'acrdebriefagent'
 param logAnalyticsName string = 'log-debrief-agent-prod'
 param environmentName string = 'cae-debrief-agent-prod'
@@ -68,7 +76,7 @@ module acr 'modules/acr.bicep' = {
 module postgres 'modules/postgres.bicep' = {
   name: 'postgres'
   params: {
-    location: location
+    location: postgresLocation
     serverName: postgresServerName
     administratorLogin: postgresAdminLogin
     administratorPassword: postgresAdminPassword
