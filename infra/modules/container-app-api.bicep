@@ -49,7 +49,9 @@ resource api 'Microsoft.App/containerApps@2024-03-01' = {
       ingress: {
         external: true
         targetPort: 8000
-        transport: 'auto'
+        // See container-app-qdrant.bicep -- 'auto' hung against this app's
+        // plain-HTTP/1.1 clients in practice; pinned to 'http' everywhere.
+        transport: 'http'
       }
       registries: [
         {
