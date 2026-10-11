@@ -110,7 +110,13 @@ module qdrantApp 'modules/container-app-qdrant.bicep' = {
 // ingress. Qdrant's REST client never sees TLS itself; ACA forwards decrypted
 // traffic to the container's port 6333 internally.
 var qdrantUrl = 'https://${qdrantApp.outputs.internalFqdn}'
-var databaseUrl = 'postgresql+asyncpg://${postgresAdminLogin}:${postgresAdminPassword}@${postgres.outputs.fqdn}:5432/${postgres.outputs.databaseName}?ssl=true'
+// `?ssl=true` (SQLAlchemy's documented asyncpg spelling) turned out NOT to
+// work against this asyncpg version in practice -- confirmed by a live
+// migrate-job failure: `asyncpg.exceptions._base.ClientConfigurationError:
+// 'sslmode' parameter must be one of: disable, allow, prefer, require,
+// verify-ca, verify-full`. asyncpg's own DSN parser wants the libpq-style
+// `sslmode` key with one of those literal values, not `ssl=true`.
+var databaseUrl = 'postgresql+asyncpg://${postgresAdminLogin}:${postgresAdminPassword}@${postgres.outputs.fqdn}:5432/${postgres.outputs.databaseName}?sslmode=require'
 
 module api 'modules/container-app-api.bicep' = {
   name: 'api-app'
