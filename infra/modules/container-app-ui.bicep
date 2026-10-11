@@ -20,8 +20,8 @@ resource ui 'Microsoft.App/containerApps@2024-03-01' = {
       ingress: {
         external: true
         targetPort: 8501
-        // See container-app-qdrant.bicep -- 'auto' hung against this app's
-        // plain-HTTP/1.1 clients in practice; pinned to 'http' everywhere.
+        // See container-app-qdrant.bicep -- none of this app's traffic is
+        // gRPC, so pinned to 'http' rather than 'auto' everywhere.
         transport: 'http'
       }
       registries: [

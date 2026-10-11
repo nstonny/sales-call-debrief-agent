@@ -16,8 +16,14 @@ def get_async_qdrant_client() -> AsyncQdrantClient:
     """Return a lazily-initialized AsyncQdrantClient singleton."""
     global _async_qdrant_client
     if _async_qdrant_client is None:
+        # port=None, not the client's own 6333 default: without it, the
+        # client appends :6333 to the host regardless of what QDRANT_URL
+        # says, which breaks any URL that relies on its scheme's implicit
+        # port (e.g. Azure Container Apps' internal ingress, reachable only
+        # on 443) rather than spelling the port out in the string.
         _async_qdrant_client = AsyncQdrantClient(
             url=QDRANT_URL,
+            port=None,
             api_key=QDRANT_API_KEY,
             timeout=QDRANT_TIMEOUT_SECONDS,
         )
@@ -28,8 +34,10 @@ def get_sync_qdrant_client() -> QdrantClient:
     """Return a lazily-initialized synchronous QdrantClient singleton."""
     global _sync_qdrant_client
     if _sync_qdrant_client is None:
+        # See get_async_qdrant_client -- port=None for the same reason.
         _sync_qdrant_client = QdrantClient(
             url=QDRANT_URL,
+            port=None,
             api_key=QDRANT_API_KEY,
             timeout=QDRANT_TIMEOUT_SECONDS,
         )

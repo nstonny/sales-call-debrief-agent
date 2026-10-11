@@ -20,12 +20,12 @@ resource qdrant 'Microsoft.App/containerApps@2024-03-01' = {
       ingress: {
         external: false
         targetPort: 6333
-        // Explicit 'http' (HTTP/1.1), not 'auto': a live seed-job failure
-        // showed httpx (the qdrant_client's HTTP backend, no h2 package
-        // installed) hanging to ConnectTimeout against this FQDN, while curl
-        // -- which offered ALPN h2 -- got an instant 200. None of this app's
-        // traffic is gRPC, so pin the protocol rather than let 'auto'
-        // negotiate something REST clients don't speak.
+        // Explicit 'http': none of this app's traffic is gRPC, so there's
+        // no reason to let 'auto' negotiate a protocol nothing here speaks.
+        // (The real fix for an earlier seed-job ConnectTimeout against this
+        // FQDN was unrelated to transport -- see core/qdrant.py's port=None:
+        // QdrantClient was appending :6333 to the host regardless of what
+        // QDRANT_URL said, and 6333 isn't reachable through ACA's ingress.)
         transport: 'http'
       }
     }
