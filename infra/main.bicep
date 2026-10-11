@@ -110,13 +110,14 @@ module qdrantApp 'modules/container-app-qdrant.bicep' = {
 // ingress. Qdrant's REST client never sees TLS itself; ACA forwards decrypted
 // traffic to the container's port 6333 internally.
 var qdrantUrl = 'https://${qdrantApp.outputs.internalFqdn}'
-// `?ssl=true` (SQLAlchemy's documented asyncpg spelling) turned out NOT to
-// work against this asyncpg version in practice -- confirmed by a live
-// migrate-job failure: `asyncpg.exceptions._base.ClientConfigurationError:
-// 'sslmode' parameter must be one of: disable, allow, prefer, require,
-// verify-ca, verify-full`. asyncpg's own DSN parser wants the libpq-style
-// `sslmode` key with one of those literal values, not `ssl=true`.
-var databaseUrl = 'postgresql+asyncpg://${postgresAdminLogin}:${postgresAdminPassword}@${postgres.outputs.fqdn}:5432/${postgres.outputs.databaseName}?sslmode=require'
+// Two failed live attempts narrowed this down: SQLAlchemy's asyncpg dialect
+// forwards the URL's `ssl=` query value verbatim as the Python `ssl` kwarg to
+// asyncpg.connect() (never renaming the key -- a query key literally named
+// `sslmode` fails with `TypeError: connect() got an unexpected keyword
+// argument 'sslmode'`), and asyncpg's `ssl` kwarg accepts libpq-style string
+// values (disable/allow/prefer/require/verify-ca/verify-full) but rejects
+// `true` (`ClientConfigurationError`). So: key `ssl`, value `require`.
+var databaseUrl = 'postgresql+asyncpg://${postgresAdminLogin}:${postgresAdminPassword}@${postgres.outputs.fqdn}:5432/${postgres.outputs.databaseName}?ssl=require'
 
 module api 'modules/container-app-api.bicep' = {
   name: 'api-app'
