@@ -26,6 +26,20 @@ param langfusePublicKey string = ''
 param langfuseSecretKey string = ''
 param langfuseBaseUrl string = ''
 
+// ACA rejects a declared secret whose value is an empty string
+// (ContainerAppSecretInvalid) -- qdrant-api-key/langfuse-secret-key are
+// optional, so they're only declared (as a secret and as an env var) when a
+// real value is supplied; omitted entirely otherwise, which is what
+// core/config.py already treats as "unset" for both.
+var optionalSecrets = concat(
+  empty(qdrantApiKey) ? [] : [{ name: 'qdrant-api-key', value: qdrantApiKey }],
+  empty(langfuseSecretKey) ? [] : [{ name: 'langfuse-secret-key', value: langfuseSecretKey }]
+)
+var optionalEnv = concat(
+  empty(qdrantApiKey) ? [] : [{ name: 'QDRANT_API_KEY', secretRef: 'qdrant-api-key' }],
+  empty(langfuseSecretKey) ? [] : [{ name: 'LANGFUSE_SECRET_KEY', secretRef: 'langfuse-secret-key' }]
+)
+
 resource api 'Microsoft.App/containerApps@2024-03-01' = {
   name: 'ca-debrief-api'
   location: location
@@ -44,13 +58,11 @@ resource api 'Microsoft.App/containerApps@2024-03-01' = {
           passwordSecretRef: 'acr-password'
         }
       ]
-      secrets: [
+      secrets: concat([
         { name: 'acr-password', value: acrPassword }
         { name: 'database-url', value: databaseUrl }
         { name: 'openai-api-key', value: openAiApiKey }
-        { name: 'qdrant-api-key', value: qdrantApiKey }
-        { name: 'langfuse-secret-key', value: langfuseSecretKey }
-      ]
+      ], optionalSecrets)
     }
     template: {
       containers: [
@@ -69,16 +81,14 @@ resource api 'Microsoft.App/containerApps@2024-03-01' = {
             cpu: json('0.5')
             memory: '1Gi'
           }
-          env: [
+          env: concat([
             { name: 'DATABASE_URL', secretRef: 'database-url' }
             { name: 'OPENAI_API_KEY', secretRef: 'openai-api-key' }
             { name: 'QDRANT_URL', value: qdrantUrl }
             { name: 'QDRANT_COLLECTION_NAME', value: qdrantCollectionName }
-            { name: 'QDRANT_API_KEY', secretRef: 'qdrant-api-key' }
             { name: 'LANGFUSE_PUBLIC_KEY', value: langfusePublicKey }
-            { name: 'LANGFUSE_SECRET_KEY', secretRef: 'langfuse-secret-key' }
             { name: 'LANGFUSE_BASE_URL', value: langfuseBaseUrl }
-          ]
+          ], optionalEnv)
         }
       ]
       scale: {

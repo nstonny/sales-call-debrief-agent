@@ -27,20 +27,25 @@ var registryConfig = {
   passwordSecretRef: 'acr-password'
 }
 
-var sharedSecrets = [
+// ACA rejects a declared secret whose value is an empty string
+// (ContainerAppSecretInvalid) -- qdrantApiKey is optional, so it's only
+// declared (as a secret and as an env var) when a real value is supplied;
+// omitted entirely otherwise, which core/config.py already treats as unset.
+var optionalSecrets = empty(qdrantApiKey) ? [] : [{ name: 'qdrant-api-key', value: qdrantApiKey }]
+var optionalEnv = empty(qdrantApiKey) ? [] : [{ name: 'QDRANT_API_KEY', secretRef: 'qdrant-api-key' }]
+
+var sharedSecrets = concat([
   { name: 'acr-password', value: acrPassword }
   { name: 'database-url', value: databaseUrl }
   { name: 'openai-api-key', value: openAiApiKey }
-  { name: 'qdrant-api-key', value: qdrantApiKey }
-]
+], optionalSecrets)
 
-var sharedEnv = [
+var sharedEnv = concat([
   { name: 'DATABASE_URL', secretRef: 'database-url' }
   { name: 'OPENAI_API_KEY', secretRef: 'openai-api-key' }
   { name: 'QDRANT_URL', value: qdrantUrl }
   { name: 'QDRANT_COLLECTION_NAME', value: qdrantCollectionName }
-  { name: 'QDRANT_API_KEY', secretRef: 'qdrant-api-key' }
-]
+], optionalEnv)
 
 resource migrateJob 'Microsoft.App/jobs@2024-03-01' = {
   name: 'caj-debrief-migrate'
