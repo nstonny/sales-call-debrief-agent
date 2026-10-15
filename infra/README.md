@@ -108,10 +108,35 @@ real image on the next push to `main`.
 az group delete --name rg-debrief-agent-prod --yes
 ```
 
-deletes everything, including Postgres data and the Qdrant collection.
-Redeploying is: re-run `infra.yml`, then re-run (or push to trigger) the
-`deploy` job — it rebuilds the image, re-runs `migrate` against the fresh
-database, and re-runs `seed` to re-embed the knowledge base. See the root
+deletes everything, including Postgres data and the Qdrant collection. It
+also deletes the GitHub identity's role assignment, which was scoped to the
+group. The App Registration, federated credential and GitHub Environment
+secrets/variables survive.
+
+Redeploying is:
+
+1. Re-create the resource group (`infra.yml` deploys *into* it; it doesn't
+   create it):
+   ```zsh
+   az group create --name rg-debrief-agent-prod --location eastus2
+   ```
+2. Re-create the role assignment (bootstrap step 4). Without it,
+   `infra.yml` fails with `AuthorizationFailed`:
+   ```zsh
+   SP_ID=$(az ad sp show --id <AZURE_CLIENT_ID> --query id -o tsv)
+   SUB_ID=$(az account show --query id -o tsv)
+   az role assignment create \
+     --assignee-object-id "$SP_ID" \
+     --assignee-principal-type ServicePrincipal \
+     --role "Contributor" \
+     --scope "/subscriptions/$SUB_ID/resourceGroups/rg-debrief-agent-prod"
+   ```
+3. Re-run `infra.yml` (`gh workflow run infra.yml -f whatIf=false`).
+4. Re-run (or push to trigger) the `deploy` job — it rebuilds the image,
+   re-runs `migrate` against the fresh database, and re-runs `seed` to
+   re-embed the knowledge base.
+
+See the root
 `README.md`'s deployment section for the full tradeoffs of this cycle
 (notably: no Postgres data persists across a teardown, and reseeding
 re-spends OpenAI embedding cost).

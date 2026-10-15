@@ -227,3 +227,6 @@ __marimo__/
 notebooks/
 /experiments.local/
 /tests.local/
+
+# App related notes
+notes
