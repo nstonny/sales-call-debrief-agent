@@ -88,9 +88,26 @@ caught after the fact. The hook reads the edited file's path from Claude Code's
 it can't (a genuine judgment call, like a missing `raise ... from exc`) for a
 human to resolve — it never blocks or fails the edit itself.
 
+Three more hooks live alongside it:
+
+- **Protected files** (`PreToolUse` on `Edit`/`Write`, inline) — blocks
+  edits to `.env`, `uv.lock`, and existing `migrations/versions/*.py`.
+- **Destructive commands** (`PreToolUse` on `Bash`,
+  `.claude/hooks/check_destructive_bash.py`) — blocks `rm -rf`,
+  `git push --force`, `git reset --hard`, `git checkout .`, `git restore .`,
+  `git clean -f` and `git branch -D`. A guard rail against accidents, not a
+  security boundary.
+- **Tests on stop** (`Stop`, `.claude/hooks/run_tests_on_stop.py`) — runs the
+  suite at the end of every turn and shows a message only on failure. It
+  never blocks.
+
+The script-based hooks are invoked via `"$CLAUDE_PROJECT_DIR"/.claude/hooks/...`
+so they still resolve when the shell's working directory has moved into a
+subfolder.
+
 `.claude/settings.local.json`, if present, holds personal overrides and is
-gitignored; the hook itself lives in the committed `.claude/settings.json` so
-it applies for anyone working in this repo with Claude Code.
+gitignored; the hooks themselves live in the committed `.claude/settings.json`
+so they apply for anyone working in this repo with Claude Code.
 
 ## Quick Start with Docker (recommended)
 

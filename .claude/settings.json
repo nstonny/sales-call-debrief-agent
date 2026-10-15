@@ -28,7 +28,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 .claude/hooks/check_destructive_bash.py",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/check_destructive_bash.py",
             "statusMessage": "Checking for destructive commands..."
           }
         ]
@@ -39,7 +39,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 .claude/hooks/run_tests_on_stop.py",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run_tests_on_stop.py",
             "statusMessage": "Running test suite...",
             "timeout": 120
           }
