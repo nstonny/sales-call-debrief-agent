@@ -90,6 +90,9 @@ resource api 'Microsoft.App/containerApps@2024-03-01' = {
             { name: 'QDRANT_COLLECTION_NAME', value: qdrantCollectionName }
             { name: 'LANGFUSE_PUBLIC_KEY', value: langfusePublicKey }
             { name: 'LANGFUSE_BASE_URL', value: langfuseBaseUrl }
+            // Tags every trace with environment=production so Azure traces can
+            // be filtered apart from local/dev ones in the Langfuse UI.
+            { name: 'LANGFUSE_TRACING_ENVIRONMENT', value: 'production' }
           ], optionalEnv)
         }
       ]
