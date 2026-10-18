@@ -32,6 +32,20 @@ jobs:
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
+      # The template's image params default to a placeholder, and the app CD
+      # job (ci.yml) owns the real tag. Without this, every apply/what-if
+      # would reset api/ui/jobs to the placeholder. Read what's running now
+      # and pass it back in; on a first deploy (resources don't exist yet)
+      # the lookup is empty and the template's default applies.
+      - name: Resolve running images
+        run: |
+          RG=rg-debrief-agent-prod
+          API=$(az containerapp show -n ca-debrief-api -g "$RG" --query "properties.template.containers[0].image" -o tsv 2>/dev/null || true)
+          UI=$(az containerapp show -n ca-debrief-ui -g "$RG" --query "properties.template.containers[0].image" -o tsv 2>/dev/null || true)
+          JOBS=$(az containerapp job show -n caj-debrief-migrate -g "$RG" --query "properties.template.containers[0].image" -o tsv 2>/dev/null || true)
+          echo "api=$API ui=$UI jobs=$JOBS"
+          echo "IMAGE_PARAMS=${API:+apiImage=$API} ${UI:+uiImage=$UI} ${JOBS:+jobsImage=$JOBS}" >> "$GITHUB_ENV"
+
       - name: What-If preview
         if: ${{ inputs.whatIf }}
         run: |
@@ -44,7 +58,8 @@ jobs:
                           qdrantApiKey="${{ secrets.QDRANT_API_KEY }}" \
                           langfusePublicKey="${{ secrets.LANGFUSE_PUBLIC_KEY }}" \
                           langfuseSecretKey="${{ secrets.LANGFUSE_SECRET_KEY }}" \
-                          langfuseBaseUrl="${{ secrets.LANGFUSE_BASE_URL }}"
+                          langfuseBaseUrl="${{ secrets.LANGFUSE_BASE_URL }}" \
+                          $IMAGE_PARAMS
 
       - name: Apply
         if: ${{ !inputs.whatIf }}
@@ -58,4 +73,5 @@ jobs:
                           qdrantApiKey="${{ secrets.QDRANT_API_KEY }}" \
                           langfusePublicKey="${{ secrets.LANGFUSE_PUBLIC_KEY }}" \
                           langfuseSecretKey="${{ secrets.LANGFUSE_SECRET_KEY }}" \
-                          langfuseBaseUrl="${{ secrets.LANGFUSE_BASE_URL }}"
+                          langfuseBaseUrl="${{ secrets.LANGFUSE_BASE_URL }}" \
+                          $IMAGE_PARAMS
