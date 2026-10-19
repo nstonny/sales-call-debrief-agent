@@ -1,6 +1,6 @@
 """Convert one PDF file to markdown using MarkItDown with normalization.
 
-Default paths target Sales_Playbook conversion into company_playbooks.
+Both paths are required (positional or --source-pdf/--target-markdown).
 Sales-framework PDFs (SPIN, MEDDIC) should target sales_frameworks/.
 """
 
@@ -9,8 +9,6 @@ import importlib
 import re
 from pathlib import Path
 
-DEFAULT_SOURCE_PDF_PATH = Path("src/data/knowledge_base/company_playbooks/Sales_Playbook.pdf")
-DEFAULT_TARGET_MARKDOWN_PATH = Path("src/data/knowledge_base/company_playbooks/Sales_Playbook.md")
 DEFAULT_NORMALIZATION_PROFILE = "heading_list_table_canonical_v1"
 HEADING_CONNECTOR_WORDS = {
     "a",
@@ -70,14 +68,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--source-pdf",
         dest="source_pdf_flag",
         type=Path,
-        default=DEFAULT_SOURCE_PDF_PATH,
         help="Path to input PDF.",
     )
     parser.add_argument(
         "--target-markdown",
         dest="target_markdown_flag",
         type=Path,
-        default=DEFAULT_TARGET_MARKDOWN_PATH,
         help="Path to output markdown file.",
     )
     parser.add_argument(
@@ -1161,10 +1157,13 @@ def run_conversion(
 
 def main() -> None:
     """Parse args and run conversion."""
-    args = build_parser().parse_args()
+    parser = build_parser()
+    args = parser.parse_args()
 
     source_pdf_path = args.source_pdf_path or args.source_pdf_flag
     target_markdown_path = args.target_markdown_path or args.target_markdown_flag
+    if source_pdf_path is None or target_markdown_path is None:
+        parser.error("both a source PDF and a target markdown path are required")
 
     run_conversion(
         source_pdf_path=source_pdf_path,

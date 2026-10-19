@@ -10,7 +10,6 @@ class KnowledgeType(str, Enum):
     CALL_EXAMPLES = "call_examples"
     COACHING_GUIDES = "coaching_guides"
     SALES_FRAMEWORKS = "sales_frameworks"
-    COMPANY_PLAYBOOKS = "company_playbooks"
 
 
 class RetrievedChunk(BaseModel):

@@ -68,8 +68,8 @@ uv run ruff check src/ tests/ && uv run ruff format --check src/ tests/ && uv ru
 3. an ingestion module in `rag/ingestion/`, registered in
    `seed_all.INGESTION_MODULES`
 
-`COMPANY_PLAYBOOKS` is declared but has neither (2) nor (3), which is exactly why
-retrieval against it returns nothing — a worked example of the failure mode.
+Skipping (2) or (3) leaves the enum value inert: retrieval against it returns
+nothing, and nothing warns you.
 
 **A new LLM service** goes in `rag/agent/services/`, paired with a prompt builder
 in `rag/agent/prompts/` and a Pydantic schema in `schemas/`. Follow

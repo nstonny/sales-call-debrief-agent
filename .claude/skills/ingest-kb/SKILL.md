@@ -20,10 +20,7 @@ PR: propose it, execute on request.
    `debrief_agent.rag.scripts.document_processing.convert_pdf_to_markdown_markitdown`.
    Skip this step entirely unless a `sales_frameworks` source PDF changed.
    **Always pass explicit `--source-pdf`/`--target-markdown` pointed at
-   `sales_frameworks/...`** — never rely on the command's defaults, which
-   point at `company_playbooks/Sales_Playbook.{pdf,md}`. `COMPANY_PLAYBOOKS`
-   has no `retrieve_*` tool and is never registered in `seed_all` — markdown
-   written there is inert, the same failure mode CLAUDE.md already flags.
+   `sales_frameworks/...`** (both are required; there are no defaults).
 
 3. **Dry run the three Qdrant-writing CLIs first**, in `seed_all`'s order
    (order only affects log readability — the collection is shared):

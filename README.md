@@ -433,11 +433,12 @@ uv run python -m debrief_agent.rag.ingestion.ingest_call_examples
 
 Module: `src/debrief_agent/rag/scripts/document_processing/convert_pdf_to_markdown_markitdown.py`
 
-Default paths convert `src/data/knowledge_base/company_playbooks/Sales_Playbook.pdf`
-to `src/data/knowledge_base/company_playbooks/Sales_Playbook.md`.
+Pass the source PDF and target markdown paths (both required):
 
 ```zsh
-uv run python -m debrief_agent.rag.scripts.document_processing.convert_pdf_to_markdown_markitdown
+uv run python -m debrief_agent.rag.scripts.document_processing.convert_pdf_to_markdown_markitdown \
+  --source-pdf src/data/knowledge_base/sales_frameworks/<name>.pdf \
+  --target-markdown src/data/knowledge_base/sales_frameworks/<name>.md
 ```
 
 ## Debugging and Observability
@@ -479,7 +480,6 @@ sales-call-debrief-agent/
 │   │   ├── knowledge_base/
 │   │   │   ├── call_examples/
 │   │   │   ├── coaching_guides/
-│   │   │   ├── company_playbooks/
 │   │   │   └── sales_frameworks/
 │   │   ├── transcripts/
 │   │   └── ...

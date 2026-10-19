@@ -53,8 +53,7 @@ not whether to open it.
    - touches `retrieval_models.KnowledgeType` → remind that a new
      knowledge type needs all three of: the enum value, a `retrieve_*`
      tool in `rag/agent/tools.py`, and a registered ingestion module —
-     `COMPANY_PLAYBOOKS` is the on-record example of what breaks when one
-     of the three is skipped
+     skipping one leaves the type silently inert
    - touches the ruff `ignore` list in `pyproject.toml` → note the ignores
      are deliberate (reasons documented inline), not oversight
 

@@ -130,7 +130,7 @@ def test_resolve_knowledge_type_defaults_to_sales_frameworks():
     # Unknown / missing category falls back to SALES_FRAMEWORKS.
     kt = VectorRetriever._resolve_knowledge_type(
         payload={},
-        metadata={"category": "company_playbooks"},
+        metadata={"category": "not_a_category"},
     )
     assert kt is KnowledgeType.SALES_FRAMEWORKS
 

@@ -65,7 +65,7 @@ def test_retrieve_on_empty_corpus_returns_no_chunks(retriever, mocker):
     mocker.patch.object(qdrant_store_service, "scroll_all", return_value=[])
 
     result = retriever.retrieve(
-        query="anything", knowledge_type=KnowledgeType.COMPANY_PLAYBOOKS, limit=5
+        query="anything", knowledge_type=KnowledgeType.COACHING_GUIDES, limit=5
     )
 
     assert result.chunks == []
