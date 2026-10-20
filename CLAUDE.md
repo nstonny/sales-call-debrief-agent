@@ -6,8 +6,8 @@ in `README.md` — this file covers what that doesn't: the conventions and the t
 ## Commands
 
 ```zsh
-uv run pytest                                       # 200 tests, fully offline
-uv run pytest --cov=debrief_agent                   # coverage (~38%)
+uv run pytest                                       # 236 tests, fully offline
+uv run pytest --cov=debrief_agent                   # coverage (~49%)
 uv run ruff check src/ tests/
 uv run ruff format src/ tests/
 uv run alembic upgrade head
